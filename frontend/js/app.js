@@ -11,6 +11,9 @@ async function loadMap(imageUrl) {
         maxZoom: 1,
         minZoom: -2,
         zoomSnap: 0.25,
+          zoomDelta: 0.25,
+          wheelPxPerZoomLevel: 120,
+          zoomAnimation: true,
         maxBounds: bounds,
       });
 
