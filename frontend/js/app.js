@@ -1,17 +1,25 @@
-const map = L.map('map', {
-  crs: L.CRS.Simple,
-  minZoom: -2
-});
+async function loadMap(imageUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = imageUrl;
 
-// Dimensions de ton image (à ajuster si besoin)
-const w = 4960;
-const h = 3507;
+    const bounds = [[50, 50], [img.height, img.width]];
 
-// Image en fond
-const imageUrl = 'assets/maps/cite_franche.png';
+    img.onload = () => {
+      const map = L.map('map', {
+        crs: L.CRS.Simple,
+        maxZoom: 1,
+        minZoom: -2,
+        zoomSnap: 0.25,
+        maxBounds: bounds,
+      });
 
-const bounds = [[0, 0], [h, w]];
+      L.imageOverlay(imageUrl, bounds).addTo(map);
+      map.fitBounds(bounds);
 
-L.imageOverlay(imageUrl, bounds).addTo(map);
+      resolve(map);
+    };
+  });
+}
 
-map.fitBounds(bounds);
+loadMap("assets/maps/cite_franche.png");
