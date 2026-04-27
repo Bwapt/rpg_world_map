@@ -10,6 +10,7 @@ async function initMap(containerId, image) {
     maxZoom: 1,
     minZoom: -2,
     maxBounds: bounds,
+    doubleClickZoom: false
   });
 
   L.imageOverlay(image, bounds).addTo(map);
