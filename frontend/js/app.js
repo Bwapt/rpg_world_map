@@ -1,17 +1,33 @@
-const map = L.map('map', {
-  crs: L.CRS.Simple,
-  minZoom: -2
-});
+import initMap from "./map/map.init.js";
+import MapController from "./map/map.controller.js";
+import HttpClient from "./services/http.service.js";
+import WorldService from "./services/world.service.js";
+import PoiService from "./services/poi.service.js";
+import AreaService from "./services/area.service.js";
 
-// Dimensions de ton image (à ajuster si besoin)
-const w = 4960;
-const h = 3507;
+async function init() {
+  const http = new HttpClient();
+  const worldService = new WorldService(http);
+  const poiService = new PoiService(http);
+  const areaService = new AreaService(http);
 
-// Image en fond
-const imageUrl = 'assets/maps/cite_franche.png';
+  const world = await worldService.getWorld();
 
-const bounds = [[0, 0], [h, w]];
+  const mapConfig = world.maps[0];
 
-L.imageOverlay(imageUrl, bounds).addTo(map);
+  if (!mapConfig) {
+    return;
+  }
 
-map.fitBounds(bounds);
+  const map = await initMap("map", mapConfig.image);
+  const controller = new MapController(
+    map,
+    mapConfig.id,
+    poiService,
+    areaService
+  );
+
+  await controller.init();
+}
+
+init();

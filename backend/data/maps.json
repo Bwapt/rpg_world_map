@@ -1,0 +1,46 @@
+{
+  "maps": [
+    {
+      "id": "cite_franche",
+      "image": "assets/maps/cite_franche.png",
+      "pois": [
+        {
+          "id": "6e9adeb5-b75e-4bbd-9c25-519a12f180d6",
+          "name": "dssx",
+          "description": "cxwvxwxcvcxwvxllll",
+          "x": 1210,
+          "y": 2279.6087182148417
+        }
+      ],
+      "areas": [
+        {
+          "id": "6a58d159-0646-41dc-bd88-54220b3a7b13",
+          "name": "sgfvcxv",
+          "description": "xcvxcvxcvxvc",
+          "points": [
+            {
+              "x": 2246,
+              "y": 2726.156720290607
+            },
+            {
+              "x": 2164,
+              "y": 2087.173845355475
+            },
+            {
+              "x": 2472,
+              "y": 1771.0098598858328
+            },
+            {
+              "x": 3328,
+              "y": 2540.261546445252
+            },
+            {
+              "x": 2696,
+              "y": 2555.81940840685
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
