@@ -1,28 +1,33 @@
-async function loadMap(imageUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = imageUrl;
+import initMap from "./map/map.init.js";
+import MapController from "./map/map.controller.js";
+import HttpClient from "./services/http.service.js";
+import WorldService from "./services/world.service.js";
+import PoiService from "./services/poi.service.js";
+import AreaService from "./services/area.service.js";
 
-    const bounds = [[50, 50], [img.height, img.width]];
+async function init() {
+  const http = new HttpClient();
+  const worldService = new WorldService(http);
+  const poiService = new PoiService(http);
+  const areaService = new AreaService(http);
 
-    img.onload = () => {
-      const map = L.map('map', {
-        crs: L.CRS.Simple,
-        maxZoom: 1,
-        minZoom: -2,
-        zoomSnap: 0.25,
-          zoomDelta: 0.25,
-          wheelPxPerZoomLevel: 120,
-          zoomAnimation: true,
-        maxBounds: bounds,
-      });
+  const world = await worldService.getWorld();
 
-      L.imageOverlay(imageUrl, bounds).addTo(map);
-      map.fitBounds(bounds);
+  const mapConfig = world.maps[0];
 
-      resolve(map);
-    };
-  });
+  if (!mapConfig) {
+    return;
+  }
+
+  const map = await initMap("map", mapConfig.image);
+  const controller = new MapController(
+    map,
+    mapConfig.id,
+    poiService,
+    areaService
+  );
+
+  await controller.init();
 }
 
-loadMap("assets/maps/cite_franche.png");
+init();
