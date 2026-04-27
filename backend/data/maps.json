@@ -2,6 +2,7 @@
   "maps": [
     {
       "id": "cite_franche",
+      "name": "Cite franche",
       "image": "assets/maps/cite_franche.png",
       "pois": [
         {
@@ -37,6 +38,10 @@
             {
               "x": 2696,
               "y": 2555.81940840685
+            },
+            {
+              "x": 2502,
+              "y": 2748.0560456668395
             }
           ]
         }

@@ -4,11 +4,18 @@ class HttpClient {
   }
 
   async request(method, endpoint, data = null) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const config = {
       method,
-      headers: { "Content-Type": "application/json" },
-      body: data ? JSON.stringify(data) : null
-    });
+    };
+
+    if (data instanceof FormData) {
+      config.body = data;
+    } else if (data) {
+      config.headers = { "Content-Type": "application/json" };
+      config.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, config);
 
     const result = await response.json();
 

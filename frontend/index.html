@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <title>RPG World Map</title>
 
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=2" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -15,7 +15,22 @@
 </head>
 
 <body>
+  <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="world-panel">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <aside id="world-panel" class="world-panel" aria-hidden="true">
+    <div class="world-panel__header">
+      <h1>Maps</h1>
+    </div>
+    <div id="world-tree" class="world-tree"></div>
+    <button id="add-map-button" class="world-panel__add" type="button">Ajouter une map</button>
+  </aside>
+
   <div id="map"></div>
+  <div id="modal-root" class="modal-root"></div>
 
   <!-- Leaflet (global lib obligatoire) -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>

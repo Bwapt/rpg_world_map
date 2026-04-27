@@ -1,9 +1,13 @@
 class MapController {
-  constructor(map, mapId, poiService, areaService) {
+  constructor(map, mapId, poiService, areaService, options = {}) {
     this.map = map;
     this.mapId = mapId;
     this.poiService = poiService;
     this.areaService = areaService;
+    this.onChange = options.onChange || null;
+    this.handleCreateBound = (event) => this.handleCreate(event);
+    this.poiLayers = new Map();
+    this.areaLayers = new Map();
   }
 
   async init() {
@@ -34,12 +38,8 @@ class MapController {
     const poiResponse = await this.poiService.getByMap(this.mapId);
     this.renderPOIs(poiResponse.pois || []);
 
-    try {
-      const areaResponse = await this.areaService.getByMap(this.mapId);
-      this.renderAreas(areaResponse.areas || []);
-    } catch {
-      this.renderAreas([]);
-    }
+    const areaResponse = await this.areaService.getByMap(this.mapId);
+    this.renderAreas(areaResponse.areas || []);
   }
 
   renderPOIs(pois) {
@@ -47,6 +47,7 @@ class MapController {
       const marker = L.marker([poi.y, poi.x]).addTo(this.map);
       marker.data = poi;
       marker.bindPopup(this.buildPopupContent(poi));
+      this.poiLayers.set(poi.id, marker);
       this.bindPoiLayer(marker);
     });
   }
@@ -62,12 +63,13 @@ class MapController {
       const polygon = L.polygon(points).addTo(this.map);
       polygon.data = area;
       polygon.bindPopup(this.buildPopupContent(area));
+      this.areaLayers.set(area.id, polygon);
       this.bindAreaLayer(polygon);
     });
   }
 
   bindEvents() {
-    this.map.on("pm:create", (event) => this.handleCreate(event));
+    this.map.on("pm:create", this.handleCreateBound);
   }
 
   async handleCreate(event) {
@@ -103,7 +105,9 @@ class MapController {
       });
 
       layer.data = response.poi;
+      this.poiLayers.set(layer.data.id, layer);
       layer.bindPopup(this.buildPopupContent(layer.data));
+      this.notifyChange();
     });
 
     layer.on("pm:remove", async () => {
@@ -111,7 +115,9 @@ class MapController {
         return;
       }
 
+      this.poiLayers.delete(layer.data.id);
       await this.poiService.delete(layer.data.id);
+      this.notifyChange();
     });
   }
 
@@ -130,7 +136,9 @@ class MapController {
       });
 
       layer.data = response.area;
+      this.areaLayers.set(layer.data.id, layer);
       layer.bindPopup(this.buildPopupContent(layer.data));
+      this.notifyChange();
     });
 
     layer.on("pm:remove", async () => {
@@ -138,7 +146,9 @@ class MapController {
         return;
       }
 
+      this.areaLayers.delete(layer.data.id);
       await this.areaService.delete(layer.data.id);
+      this.notifyChange();
     });
   }
 
@@ -198,11 +208,13 @@ class MapController {
         });
 
         layer.data = response.poi;
+        this.poiLayers.set(layer.data.id, layer);
         this.bindPoiLayer(layer);
       }
 
       layer.bindPopup(this.buildPopupContent(layer.data));
       layer.closePopup();
+      this.notifyChange();
     });
 
     cancelButton.addEventListener("click", () => {
@@ -269,11 +281,13 @@ class MapController {
         });
 
         layer.data = response.area;
+        this.areaLayers.set(layer.data.id, layer);
         this.bindAreaLayer(layer);
       }
 
       layer.bindPopup(this.buildPopupContent(layer.data));
       layer.closePopup();
+      this.notifyChange();
     });
 
     cancelButton.addEventListener("click", () => {
@@ -298,6 +312,40 @@ class MapController {
     const description = item.description || "";
 
     return `<b>${name}</b><br>${description}`;
+  }
+
+  notifyChange() {
+    if (typeof this.onChange === "function") {
+      this.onChange();
+    }
+  }
+
+  focusPoi(poiId) {
+    const layer = this.poiLayers.get(poiId);
+    if (!layer) {
+      return;
+    }
+
+    const latLng = layer.getLatLng();
+    this.map.setView(latLng, Math.max(this.map.getZoom(), 0));
+    layer.openPopup();
+  }
+
+  focusArea(areaId) {
+    const layer = this.areaLayers.get(areaId);
+    if (!layer) {
+      return;
+    }
+
+    this.map.fitBounds(layer.getBounds(), { padding: [32, 32] });
+    layer.openPopup();
+  }
+
+  destroy() {
+    this.map.off("pm:create", this.handleCreateBound);
+    this.poiLayers.clear();
+    this.areaLayers.clear();
+    this.map.remove();
   }
 }
 
