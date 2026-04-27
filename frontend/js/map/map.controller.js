@@ -16,7 +16,7 @@ class MapController {
     this.map.pm.addControls({
       position: "topleft",
       drawMarker: true,
-      drawPolygon: false,
+      drawPolygon: true,
       drawPolyline: false,
       drawRectangle: false,
       drawCircle: false,
@@ -62,6 +62,7 @@ class MapController {
       const polygon = L.polygon(points).addTo(this.map);
       polygon.data = area;
       polygon.bindPopup(this.buildPopupContent(area));
+      this.bindAreaLayer(polygon);
     });
   }
 
@@ -72,12 +73,17 @@ class MapController {
   async handleCreate(event) {
     const { layer } = event;
 
-    if (!(layer instanceof L.Marker)) {
-      layer.remove();
+    if (layer instanceof L.Marker) {
+      this.openPoiForm(layer);
       return;
     }
 
-    this.openPoiForm(layer);
+    if (layer instanceof L.Polygon) {
+      this.openAreaForm(layer);
+      return;
+    }
+
+    layer.remove();
   }
 
   bindPoiLayer(layer) {
@@ -106,6 +112,33 @@ class MapController {
       }
 
       await this.poiService.delete(layer.data.id);
+    });
+  }
+
+  bindAreaLayer(layer) {
+    layer.on("dblclick", () => {
+      this.openAreaForm(layer, layer.data);
+    });
+
+    layer.on("pm:edit", async () => {
+      if (!layer.data?.id) {
+        return;
+      }
+
+      const response = await this.areaService.update(layer.data.id, {
+        points: this.getPolygonPoints(layer)
+      });
+
+      layer.data = response.area;
+      layer.bindPopup(this.buildPopupContent(layer.data));
+    });
+
+    layer.on("pm:remove", async () => {
+      if (!layer.data?.id) {
+        return;
+      }
+
+      await this.areaService.delete(layer.data.id);
     });
   }
 
@@ -180,6 +213,84 @@ class MapController {
 
       layer.closePopup();
     });
+  }
+
+  openAreaForm(layer, area = null) {
+    const container = document.createElement("div");
+    const title = area ? "Modifier la zone" : "Creer la zone";
+
+    container.innerHTML = `
+      <div style="min-width: 220px;">
+        <h4 style="margin: 0 0 8px;">${title}</h4>
+        <input
+          name="name"
+          placeholder="Nom"
+          value="${area?.name || ""}"
+          style="width: 100%; margin-bottom: 8px; box-sizing: border-box;"
+        />
+        <textarea
+          name="description"
+          placeholder="Description"
+          style="width: 100%; min-height: 80px; margin-bottom: 8px; box-sizing: border-box;"
+        >${area?.description || ""}</textarea>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" data-action="save">Valider</button>
+          <button type="button" data-action="cancel">Annuler</button>
+        </div>
+      </div>
+    `;
+
+    layer.bindPopup(container).openPopup();
+
+    const nameInput = container.querySelector('[name="name"]');
+    const descriptionInput = container.querySelector('[name="description"]');
+    const saveButton = container.querySelector('[data-action="save"]');
+    const cancelButton = container.querySelector('[data-action="cancel"]');
+
+    saveButton.addEventListener("click", async () => {
+      const payload = {
+        name: nameInput.value.trim(),
+        description: descriptionInput.value.trim(),
+        points: this.getPolygonPoints(layer)
+      };
+
+      if (!payload.name) {
+        nameInput.focus();
+        return;
+      }
+
+      if (area?.id) {
+        const response = await this.areaService.update(area.id, payload);
+        layer.data = response.area;
+      } else {
+        const response = await this.areaService.create({
+          mapId: this.mapId,
+          ...payload
+        });
+
+        layer.data = response.area;
+        this.bindAreaLayer(layer);
+      }
+
+      layer.bindPopup(this.buildPopupContent(layer.data));
+      layer.closePopup();
+    });
+
+    cancelButton.addEventListener("click", () => {
+      if (!area?.id) {
+        layer.remove();
+        return;
+      }
+
+      layer.closePopup();
+    });
+  }
+
+  getPolygonPoints(layer) {
+    return layer.getLatLngs()[0].map((point) => ({
+      x: point.lng,
+      y: point.lat
+    }));
   }
 
   buildPopupContent(item) {
