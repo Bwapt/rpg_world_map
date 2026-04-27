@@ -2,7 +2,7 @@
   "maps": [
     {
       "id": "cite_franche",
-      "name": "Cite franche",
+      "name": "Cit\u00e9 Franche",
       "image": "assets/maps/cite_franche.png",
       "pois": [
         {
@@ -11,6 +11,14 @@
           "description": "cxwvxwxcvcxwvxllll",
           "x": 1210,
           "y": 2279.6087182148417
+        },
+        {
+          "id": "5cb834b7-de67-4990-84ca-d0c73f055cf1",
+          "name": "sdfs",
+          "description": "sdf",
+          "x": 4070,
+          "y": 1847.0492994291644,
+          "icon": "inn"
         }
       ],
       "areas": [
@@ -32,6 +40,14 @@
               "y": 1771.0098598858328
             },
             {
+              "x": 3176,
+              "y": 1719.7737415672027
+            },
+            {
+              "x": 3380,
+              "y": 2107.987545407369
+            },
+            {
               "x": 3328,
               "y": 2540.261546445252
             },
@@ -43,7 +59,8 @@
               "x": 2502,
               "y": 2748.0560456668395
             }
-          ]
+          ],
+          "color": "#f6d32d"
         }
       ]
     }
