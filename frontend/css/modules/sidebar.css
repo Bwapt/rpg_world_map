@@ -1,3 +1,4 @@
+/* Panneau lateral listant les maps et leurs entites. */
 .world-panel {
   position: fixed;
   top: 0;
@@ -51,6 +52,7 @@ body.panel-open .world-panel {
   font-size: 14px;
 }
 
+/* Noeud racine d'une map dans l'arbre. */
 .world-map {
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 8px;
@@ -124,6 +126,7 @@ body.panel-open .world-panel {
   padding: 0 12px 12px;
 }
 
+/* Sections POI/zones d'une map. */
 .world-map__section {
   border-top: 1px solid rgba(148, 163, 184, 0.08);
   padding-top: 10px;
@@ -176,6 +179,7 @@ body.panel-open .world-panel {
   border-top: 0;
 }
 
+/* Ligne d'entite avec action de focus et bouton de visibilite. */
 .world-map__entity-row {
   display: flex;
   align-items: center;

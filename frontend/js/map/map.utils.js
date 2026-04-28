@@ -1,5 +1,12 @@
-// Map-specific utilities (icons, styles, etc.)
+/**
+ * Helpers Leaflet purs: rendu des icones, styles de zones et conversions de coordonnees.
+ */
 class MapUtils {
+  /**
+   * Catalogue des icones disponibles dans le formulaire de POI.
+   *
+   * @type {Array<{value: string, label: string, glyph: string}>}
+   */
   static POI_ICON_OPTIONS = [
     { value: "default", label: "Pin par defaut", glyph: "" },
     { value: "inn", label: "Taverne", glyph: "🍺" },
@@ -10,13 +17,28 @@ class MapUtils {
     { value: "star", label: "Important", glyph: "⭐" }
   ];
 
+  /**
+   * Couleur fallback des zones dessinees.
+   *
+   * @type {string}
+   */
   static DEFAULT_AREA_COLOR = "#3b82f6";
 
+  /**
+   * @param {string} iconKey Cle fonctionnelle de l'icone.
+   * @returns {string} Glyphe affiche sur la map.
+   */
   static getPoiGlyph(iconKey) {
     const option = MapUtils.POI_ICON_OPTIONS.find((item) => item.value === iconKey);
     return option?.glyph || "⭐";
   }
 
+  /**
+   * Genere les options HTML du select d'icone.
+   *
+   * @param {string} selectedIcon Cle de l'icone selectionnee.
+   * @returns {string} Liste de balises option.
+   */
   static renderPoiIconOptions(selectedIcon) {
     return MapUtils.POI_ICON_OPTIONS.map((option) => {
       const selected = option.value === selectedIcon ? "selected" : "";
@@ -25,6 +47,10 @@ class MapUtils {
     }).join("");
   }
 
+  /**
+   * @param {object} area Zone sauvegardee.
+   * @returns {object} Style Leaflet applique au polygone.
+   */
   static getAreaStyle(area) {
     const color = area?.color || MapUtils.DEFAULT_AREA_COLOR;
     return {
@@ -35,6 +61,13 @@ class MapUtils {
     };
   }
 
+  /**
+   * Applique l'icone Leaflet d'un POI sur un marker existant.
+   *
+   * @param {L.Marker} layer Marker Leaflet a modifier.
+   * @param {string} [iconKey] Cle de l'icone sauvegardee.
+   * @returns {void}
+   */
   static applyPoiMarkerIcon(layer, iconKey = "default") {
     if (!iconKey || iconKey === "default") {
       layer.setIcon(new L.Icon.Default());
@@ -53,6 +86,13 @@ class MapUtils {
     layer.setIcon(icon);
   }
 
+  /**
+   * Construit le HTML de preview affiche dans les popups Leaflet.
+   *
+   * @param {object} item POI ou zone.
+   * @param {(value: unknown) => string} escapeHTML Fonction d'echappement.
+   * @returns {string} Markup de popup.
+   */
   static buildPopupContent(item, escapeHTML) {
     const name = item.name || "";
     const description = item.description || "";
@@ -71,6 +111,12 @@ class MapUtils {
     `;
   }
 
+  /**
+   * Convertit un polygone Leaflet vers le format persiste par l'API.
+   *
+   * @param {L.Polygon} layer Polygone Leaflet.
+   * @returns {Array<{x: number, y: number}>} Points serialisables.
+   */
   static getPolygonPoints(layer) {
     return layer.getLatLngs()[0].map((point) => ({
       x: point.lng,
@@ -78,6 +124,12 @@ class MapUtils {
     }));
   }
 
+  /**
+   * Cree un marker Leaflet depuis un POI sauvegarde.
+   *
+   * @param {{x: number, y: number, icon?: string}} poi POI provenant de l'API.
+   * @returns {L.Marker} Marker pret a ajouter a la map.
+   */
   static createPoiMarker(poi) {
     const marker = L.marker([poi.y, poi.x]);
     MapUtils.applyPoiMarkerIcon(marker, poi.icon);

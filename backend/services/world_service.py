@@ -1,3 +1,5 @@
+"""Service de persistence JSON pour les maps, POI et zones."""
+
 import json
 import re
 from pathlib import Path
@@ -10,6 +12,7 @@ MAPS_DIR = PROJECT_ROOT / "frontend" / "assets" / "maps"
 
 
 def load_world():
+    """Charge le monde depuis le fichier JSON et complete les champs optionnels."""
     with open(FILE_PATH, "r", encoding="utf-8") as file:
         world = json.load(file)
 
@@ -22,24 +25,29 @@ def load_world():
 
 
 def save_world(data):
+    """Persiste le monde complet dans le fichier JSON."""
     with open(FILE_PATH, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
 
 
 def prettify_map_name(map_id):
+    """Transforme un identifiant technique en libelle lisible."""
     return map_id.replace("_", " ").strip().title()
 
 
 def slugify(value):
+    """Convertit une chaine libre en fragment d'identifiant compatible fichier."""
     slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
     return slug or "map"
 
 
 def generate_map_id(name):
+    """Genere un identifiant unique de map a partir de son nom."""
     return f"{slugify(name)}_{uuid.uuid4().hex[:8]}"
 
 
 def save_map_image(image_file, map_id):
+    """Sauvegarde l'image uploadee et retourne son chemin relatif frontend."""
     MAPS_DIR.mkdir(parents=True, exist_ok=True)
     extension = Path(image_file.filename or "").suffix.lower() or ".png"
     image_path = MAPS_DIR / f"{map_id}{extension}"
@@ -48,12 +56,14 @@ def save_map_image(image_file, map_id):
 
 
 def get_map_by_id(map_id):
+    """Retourne le monde et la map correspondant a l'identifiant donne."""
     world = load_world()
     map_data = next((item for item in world["maps"] if item["id"] == map_id), None)
     return world, map_data
 
 
 def create_map(name, image_file):
+    """Cree une map, sauvegarde son image et persiste le monde."""
     world = load_world()
     map_id = generate_map_id(name)
     image = save_map_image(image_file, map_id)
@@ -73,6 +83,7 @@ def create_map(name, image_file):
 
 
 def delete_map(map_id):
+    """Supprime une map du monde et retire son image locale si possible."""
     world = load_world()
 
     for index, map_data in enumerate(world["maps"]):
@@ -91,6 +102,7 @@ def delete_map(map_id):
 
 
 def create_entity(map_id, collection_name, payload, extra_data=None):
+    """Cree une entite dans une collection de map."""
     world, map_data = get_map_by_id(map_id)
 
     if not map_data:
@@ -110,6 +122,7 @@ def create_entity(map_id, collection_name, payload, extra_data=None):
 
 
 def update_entity(entity_id, collection_name, payload):
+    """Met a jour une entite existante dans toutes les maps."""
     world = load_world()
 
     for map_data in world["maps"]:
@@ -123,6 +136,7 @@ def update_entity(entity_id, collection_name, payload):
 
 
 def delete_entity(entity_id, collection_name):
+    """Supprime une entite existante dans toutes les maps."""
     world = load_world()
 
     for map_data in world["maps"]:

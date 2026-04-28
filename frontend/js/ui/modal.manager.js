@@ -1,10 +1,22 @@
 import HtmlUtils from "../utils/html.utils.js";
 
+/**
+ * Gere l'ouverture et la fermeture des modales globales de l'application.
+ */
 class ModalManager {
+  /**
+   * @param {HTMLElement} modalRoot Conteneur racine des modales.
+   */
   constructor(modalRoot) {
     this.modalRoot = modalRoot;
   }
 
+  /**
+   * Affiche une modale generique et retourne son controleur de fermeture.
+   *
+   * @param {HTMLElement} content Contenu DOM de la modale.
+   * @returns {{close: Function}} API de fermeture.
+   */
   openModal(content) {
     this.modalRoot.innerHTML = "";
     this.modalRoot.classList.add("is-open");
@@ -28,6 +40,12 @@ class ModalManager {
     return { close };
   }
 
+  /**
+   * Ouvre la modale de creation de map.
+   *
+   * @param {(data: {name: string, image: File}) => Promise<void>} onConfirm Callback de validation.
+   * @returns {void}
+   */
   openAddMapModal(onConfirm) {
     const content = document.createElement("div");
     content.className = "modal";
@@ -71,6 +89,13 @@ class ModalManager {
     });
   }
 
+  /**
+   * Ouvre la modale de confirmation de suppression de map.
+   *
+   * @param {object} map Map a supprimer.
+   * @param {Function} onConfirm Callback de suppression.
+   * @returns {void}
+   */
   openDeleteMapModal(map, onConfirm) {
     const content = document.createElement("div");
     content.className = "modal";

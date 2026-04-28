@@ -1,3 +1,4 @@
+/* Agregateur CSS: chaque module porte une responsabilite UI precise. */
 @import url("./modules/base.css");
 @import url("./modules/sidebar.css");
 @import url("./modules/modal.css");

@@ -1,23 +1,42 @@
 import MapUtils from "./map.utils.js";
 
+/**
+ * Registre les layers Leaflet actifs et synchronise leur affichage apres sauvegarde.
+ */
 class MapLayerManager {
-  constructor(poiService, areaService) {
-    this.poiService = poiService;
-    this.areaService = areaService;
+  /**
+   * Initialise les registres de layers par type d'entite.
+   */
+  constructor() {
     this.poiLayers = new Map();
     this.areaLayers = new Map();
   }
 
-  async renderPOIs(map, pois, buildPopupContent) {
+  /**
+   * Affiche les POI existants et garde une reference par identifiant.
+   *
+   * @param {L.Map} map Map Leaflet cible.
+   * @param {Array<object>} pois POI renvoyes par l'API.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {Promise<void>}
+   */
+  async renderPois(map, pois, buildPopupContent) {
     pois.forEach((poi) => {
       const marker = MapUtils.createPoiMarker(poi).addTo(map);
       marker.data = poi;
       marker.bindPopup(buildPopupContent(poi));
       this.poiLayers.set(poi.id, marker);
-      this.bindPoiLayer(map, marker, buildPopupContent);
     });
   }
 
+  /**
+   * Affiche les zones existantes et garde une reference par identifiant.
+   *
+   * @param {L.Map} map Map Leaflet cible.
+   * @param {Array<object>} areas Zones renvoyees par l'API.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {Promise<void>}
+   */
   async renderAreas(map, areas, buildPopupContent) {
     areas.forEach((area) => {
       const points = (area.points || []).map((point) => [point.y, point.x]);
@@ -30,76 +49,17 @@ class MapLayerManager {
       polygon.data = area;
       polygon.bindPopup(buildPopupContent(area));
       this.areaLayers.set(area.id, polygon);
-      this.bindAreaLayer(map, polygon, buildPopupContent);
     });
   }
 
-  bindPoiLayer(map, layer, buildPopupContent, onChangeCallback) {
-    layer.on("dblclick", () => {
-      // Will be handled by controller calling openPoiForm
-    });
-
-    layer.on("pm:dragend", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      const { lat, lng } = layer.getLatLng();
-      const response = await this.poiService.update(layer.data.id, {
-        x: lng,
-        y: lat
-      });
-
-      layer.data = response.poi;
-      MapUtils.applyPoiMarkerIcon(layer, layer.data.icon);
-      this.poiLayers.set(layer.data.id, layer);
-      layer.bindPopup(buildPopupContent(layer.data));
-      onChangeCallback?.();
-    });
-
-    layer.on("pm:remove", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      this.poiLayers.delete(layer.data.id);
-      await this.poiService.delete(layer.data.id);
-      onChangeCallback?.();
-    });
-  }
-
-  bindAreaLayer(map, layer, buildPopupContent, onChangeCallback) {
-    layer.on("dblclick", () => {
-      // Will be handled by controller calling openAreaForm
-    });
-
-    layer.on("pm:edit", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      const response = await this.areaService.update(layer.data.id, {
-        points: MapUtils.getPolygonPoints(layer)
-      });
-
-      layer.data = response.area;
-      layer.setStyle(MapUtils.getAreaStyle(layer.data));
-      this.areaLayers.set(layer.data.id, layer);
-      layer.bindPopup(buildPopupContent(layer.data));
-      onChangeCallback?.();
-    });
-
-    layer.on("pm:remove", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      this.areaLayers.delete(layer.data.id);
-      await this.areaService.delete(layer.data.id);
-      onChangeCallback?.();
-    });
-  }
-
+  /**
+   * Met a jour un marker POI deja present sur la map.
+   *
+   * @param {string} poiId Identifiant du POI.
+   * @param {object} poiData Donnees a appliquer.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {void}
+   */
   updatePoiLayer(poiId, poiData, buildPopupContent) {
     const layer = this.poiLayers.get(poiId);
     if (!layer) {
@@ -111,6 +71,14 @@ class MapLayerManager {
     layer.bindPopup(buildPopupContent(poiData));
   }
 
+  /**
+   * Met a jour un polygone deja present sur la map.
+   *
+   * @param {string} areaId Identifiant de la zone.
+   * @param {object} areaData Donnees a appliquer.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {void}
+   */
   updateAreaLayer(areaId, areaData, buildPopupContent) {
     const layer = this.areaLayers.get(areaId);
     if (!layer) {
@@ -122,6 +90,13 @@ class MapLayerManager {
     layer.bindPopup(buildPopupContent(areaData));
   }
 
+  /**
+   * Prepare un marker POI sans l'ajouter a la map.
+   *
+   * @param {object} poi Donnees du POI.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {L.Marker} Marker Leaflet.
+   */
   addPoiLayer(poi, buildPopupContent) {
     const layer = MapUtils.createPoiMarker(poi);
     layer.data = poi;
@@ -130,6 +105,13 @@ class MapLayerManager {
     return layer;
   }
 
+  /**
+   * Prepare un polygone sans l'ajouter a la map.
+   *
+   * @param {object} area Donnees de la zone.
+   * @param {(item: object) => string} buildPopupContent Fabrique de popup.
+   * @returns {L.Polygon} Polygone Leaflet.
+   */
   addAreaLayer(area, buildPopupContent) {
     const points = (area.points || []).map((point) => [point.y, point.x]);
     const layer = L.polygon(points, MapUtils.getAreaStyle(area));
@@ -139,14 +121,27 @@ class MapLayerManager {
     return layer;
   }
 
+  /**
+   * @param {string} poiId Identifiant du POI.
+   * @returns {L.Marker|undefined} Marker associe.
+   */
   getPoiLayer(poiId) {
     return this.poiLayers.get(poiId);
   }
 
+  /**
+   * @param {string} areaId Identifiant de la zone.
+   * @returns {L.Polygon|undefined} Polygone associe.
+   */
   getAreaLayer(areaId) {
     return this.areaLayers.get(areaId);
   }
 
+  /**
+   * Vide les registres au demontage de la map.
+   *
+   * @returns {void}
+   */
   clear() {
     this.poiLayers.clear();
     this.areaLayers.clear();

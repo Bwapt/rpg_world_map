@@ -1,6 +1,15 @@
 import MapUtils from "./map.utils.js";
 
+/**
+ * Branche les interactions Leaflet/Geoman des layers deja presents sur la map.
+ */
 class MapLayerEvents {
+  /**
+   * @param {MapLayerManager} layerManager Registre des layers actifs.
+   * @param {PoiService} poiService Service des POI.
+   * @param {AreaService} areaService Service des zones.
+   * @param {object} callbacks Points d'entree vers le controller.
+   */
   constructor(layerManager, poiService, areaService, callbacks) {
     this.layerManager = layerManager;
     this.poiService = poiService;
@@ -8,6 +17,11 @@ class MapLayerEvents {
     this.callbacks = callbacks;
   }
 
+  /**
+   * Branche tous les layers actuellement connus par le manager.
+   *
+   * @returns {void}
+   */
   bindAll() {
     this.layerManager.poiLayers.forEach((layer) => {
       this.bindPoiLayerEvents(layer);
@@ -18,6 +32,12 @@ class MapLayerEvents {
     });
   }
 
+  /**
+   * Branche edition, suppression et ouverture de formulaire pour un POI.
+   *
+   * @param {L.Marker} layer Marker Leaflet.
+   * @returns {void}
+   */
   bindPoiLayerEvents(layer) {
     layer.on("dblclick", () => {
       this.callbacks.openPoiForm(layer, layer.data);
@@ -52,6 +72,12 @@ class MapLayerEvents {
     });
   }
 
+  /**
+   * Branche edition, suppression et ouverture de formulaire pour une zone.
+   *
+   * @param {L.Polygon} layer Polygone Leaflet.
+   * @returns {void}
+   */
   bindAreaLayerEvents(layer) {
     layer.on("dblclick", () => {
       this.callbacks.openAreaForm(layer, layer.data);

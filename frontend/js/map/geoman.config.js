@@ -1,3 +1,8 @@
+/**
+ * Traductions francaises de la toolbar Geoman.
+ *
+ * @type {object}
+ */
 const GEOMAN_TRANSLATIONS = {
   tooltips: {
     placeMarker: "Cliquez pour placer un point d'intérêt",
@@ -28,6 +33,11 @@ const GEOMAN_TRANSLATIONS = {
   }
 };
 
+/**
+ * Configuration des outils Geoman autorises dans la v1.
+ *
+ * @type {object}
+ */
 const GEOMAN_CONTROLS = {
   position: "topleft",
   drawMarker: true,
@@ -44,6 +54,12 @@ const GEOMAN_CONTROLS = {
   removalMode: true
 };
 
+/**
+ * Active Geoman sur une map Leaflet avec les controles utiles a l'editeur.
+ *
+ * @param {L.Map} map Instance Leaflet.
+ * @returns {void}
+ */
 function setupGeomanControls(map) {
   map.pm.setLang("fr", GEOMAN_TRANSLATIONS, "en");
   map.pm.addControls(GEOMAN_CONTROLS);

@@ -1,6 +1,16 @@
 import HtmlUtils from "../utils/html.utils.js";
 
+/**
+ * Produit le HTML de la sidebar a partir du monde courant.
+ */
 class SidebarTemplate {
+  /**
+   * @param {object} world Monde courant.
+   * @param {string|null} activeMapId Map active.
+   * @param {Set<string>} openMapIds Maps ouvertes.
+   * @param {(type: string, entityId: string) => boolean} isEntityHidden Predicate de visibilite.
+   * @returns {string} Markup complet de la sidebar.
+   */
   render(world, activeMapId, openMapIds, isEntityHidden) {
     const maps = world?.maps || [];
 
@@ -13,6 +23,13 @@ class SidebarTemplate {
       .join("");
   }
 
+  /**
+   * @param {object} map Map a rendre.
+   * @param {string|null} activeMapId Map active.
+   * @param {Set<string>} openMapIds Maps ouvertes.
+   * @param {(type: string, entityId: string) => boolean} isEntityHidden Predicate de visibilite.
+   * @returns {string} Markup d'une map.
+   */
   renderMapNode(map, activeMapId, openMapIds, isEntityHidden) {
     const isActive = map.id === activeMapId;
     const isOpen = isActive || openMapIds.has(map.id);
@@ -48,6 +65,13 @@ class SidebarTemplate {
     `;
   }
 
+  /**
+   * @param {string} title Libelle de section.
+   * @param {"poi"|"area"} type Type d'entites.
+   * @param {object} map Map parente.
+   * @param {(type: string, entityId: string) => boolean} isEntityHidden Predicate de visibilite.
+   * @returns {string} Markup de section.
+   */
   renderEntitySection(title, type, map, isEntityHidden) {
     const items = type === "poi" ? (map.pois || []) : (map.areas || []);
     const hiddenCount = items.filter((item) => isEntityHidden(type, item.id)).length;
@@ -75,6 +99,13 @@ class SidebarTemplate {
     `;
   }
 
+  /**
+   * @param {"poi"|"area"} type Type d'entites.
+   * @param {string} mapId Map parente.
+   * @param {Array<object>} items Entites a lister.
+   * @param {(type: string, entityId: string) => boolean} isEntityHidden Predicate de visibilite.
+   * @returns {string} Markup de liste.
+   */
   renderEntityList(type, mapId, items, isEntityHidden) {
     if (!items.length) {
       return `<div class="world-map__empty">Aucun</div>`;
@@ -87,6 +118,13 @@ class SidebarTemplate {
     `;
   }
 
+  /**
+   * @param {"poi"|"area"} type Type d'entite.
+   * @param {string} mapId Map parente.
+   * @param {object} item Entite a rendre.
+   * @param {(type: string, entityId: string) => boolean} isEntityHidden Predicate de visibilite.
+   * @returns {string} Markup d'une ligne.
+   */
   renderEntityItem(type, mapId, item, isEntityHidden) {
     const label = HtmlUtils.escapeHTML(item.name || "Sans nom");
     const isHidden = isEntityHidden(type, item.id);
