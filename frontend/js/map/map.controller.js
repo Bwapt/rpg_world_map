@@ -1,39 +1,11 @@
 import MapFormBuilder from "./map.form.builder.js";
+import MapLayerEvents from "./map.layer.events.js";
 import MapLayerManager from "./map.layer.manager.js";
 import MapUtils from "./map.utils.js";
+import { setupGeomanControls } from "./geoman.config.js";
 import HtmlUtils from "../utils/html.utils.js";
 
 class MapController {
-  static GEOMAN_TRANSLATIONS = {
-    tooltips: {
-      placeMarker: "Cliquez pour placer un point d'intérêt",
-      firstVertex: "Cliquez pour placer le premier point",
-      continueLine: "Cliquez pour ajouter un point",
-      finishLine: "Cliquez sur le dernier point pour terminer",
-      finishPoly: "Cliquez sur le premier point pour fermer la zone"
-    },
-    actions: {
-      finish: "Terminer",
-      cancel: "Annuler",
-      removeLastVertex: "Retirer le dernier point"
-    },
-    buttonTitles: {
-      drawMarkerButton: "Ajouter un point d'intérêt",
-      drawPolyButton: "Dessiner une zone",
-      drawLineButton: "Dessiner une ligne",
-      drawCircleButton: "Dessiner un cercle",
-      drawRectButton: "Dessiner un rectangle",
-      editButton: "Modifier les éléments",
-      dragButton: "Déplacer les éléments",
-      cutButton: "Découper une zone",
-      deleteButton: "Supprimer un élément",
-      drawCircleMarkerButton: "Ajouter un marqueur rond",
-      drawTextButton: "Ajouter du texte",
-      rotateButton: "Faire pivoter",
-      scaleButton: "Redimensionner"
-    }
-  };
-
   constructor(map, mapId, poiService, areaService, options = {}) {
     this.map = map;
     this.mapId = mapId;
@@ -44,6 +16,12 @@ class MapController {
     
     this.layerManager = new MapLayerManager(poiService, areaService);
     this.formBuilder = new MapFormBuilder(poiService, areaService, mapId);
+    this.layerEvents = new MapLayerEvents(this.layerManager, poiService, areaService, {
+      openPoiForm: (layer, poi) => this.openPoiForm(layer, poi),
+      openAreaForm: (layer, area) => this.openAreaForm(layer, area),
+      buildPopupContent: (item) => this.buildPopupContent(item),
+      notifyChange: () => this.notifyChange()
+    });
   }
 
   async init() {
@@ -53,22 +31,7 @@ class MapController {
   }
 
   setupGeoman() {
-    this.map.pm.setLang("fr", MapController.GEOMAN_TRANSLATIONS, "en");
-    this.map.pm.addControls({
-      position: "topleft",
-      drawMarker: true,
-      drawPolygon: true,
-      drawPolyline: false,
-      drawRectangle: false,
-      drawCircle: false,
-      drawCircleMarker: false,
-      drawText: false,
-      editMode: true,
-      dragMode: false,
-      cutPolygon: false,
-      rotateMode: false,
-      removalMode: true
-    });
+    setupGeomanControls(this.map);
   }
 
   async loadData() {
@@ -78,18 +41,7 @@ class MapController {
     const areaResponse = await this.areaService.getByMap(this.mapId);
     await this.layerManager.renderAreas(this.map, areaResponse.areas || [], (item) => this.buildPopupContent(item));
 
-    // Setup event listeners after rendering
-    this.setupLayerEventListeners();
-  }
-
-  setupLayerEventListeners() {
-    this.layerManager.poiLayers.forEach((layer) => {
-      this.bindPoiLayerEvents(layer);
-    });
-
-    this.layerManager.areaLayers.forEach((layer) => {
-      this.bindAreaLayerEvents(layer);
-    });
+    this.layerEvents.bindAll();
   }
 
   bindEvents() {
@@ -112,78 +64,13 @@ class MapController {
     layer.remove();
   }
 
-  bindPoiLayerEvents(layer) {
-    layer.on("dblclick", () => {
-      this.openPoiForm(layer, layer.data);
-    });
-
-    layer.on("pm:dragend", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      const { lat, lng } = layer.getLatLng();
-      const response = await this.poiService.update(layer.data.id, {
-        x: lng,
-        y: lat
-      });
-
-      layer.data = response.poi;
-      MapUtils.applyPoiMarkerIcon(layer, layer.data.icon);
-      this.layerManager.poiLayers.set(layer.data.id, layer);
-      layer.bindPopup(this.buildPopupContent(layer.data));
-      this.notifyChange();
-    });
-
-    layer.on("pm:remove", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      this.layerManager.poiLayers.delete(layer.data.id);
-      await this.poiService.delete(layer.data.id);
-      this.notifyChange();
-    });
-  }
-
-  bindAreaLayerEvents(layer) {
-    layer.on("dblclick", () => {
-      this.openAreaForm(layer, layer.data);
-    });
-
-    layer.on("pm:edit", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      const response = await this.areaService.update(layer.data.id, {
-        points: MapUtils.getPolygonPoints(layer)
-      });
-
-      layer.data = response.area;
-      layer.setStyle(MapUtils.getAreaStyle(layer.data));
-      this.layerManager.areaLayers.set(layer.data.id, layer);
-      layer.bindPopup(this.buildPopupContent(layer.data));
-      this.notifyChange();
-    });
-
-    layer.on("pm:remove", async () => {
-      if (!layer.data?.id) {
-        return;
-      }
-
-      this.layerManager.areaLayers.delete(layer.data.id);
-      await this.areaService.delete(layer.data.id);
-      this.notifyChange();
-    });
-  }
 
   openPoiForm(layer, poi = null) {
     this.formBuilder.openPoiForm(layer, poi, (poiData, layer) => {
       if (!poi?.id) {
         MapUtils.applyPoiMarkerIcon(layer, poiData.icon);
         this.layerManager.poiLayers.set(poiData.id, layer);
-        this.bindPoiLayerEvents(layer);
+        this.layerEvents.bindPoiLayerEvents(layer);
       } else {
         this.layerManager.updatePoiLayer(poiData.id, poiData, (item) => this.buildPopupContent(item));
       }
@@ -196,7 +83,7 @@ class MapController {
     this.formBuilder.openAreaForm(layer, area, (areaData, layer) => {
       if (!area?.id) {
         this.layerManager.areaLayers.set(areaData.id, layer);
-        this.bindAreaLayerEvents(layer);
+        this.layerEvents.bindAreaLayerEvents(layer);
       } else {
         this.layerManager.updateAreaLayer(areaData.id, areaData, (item) => this.buildPopupContent(item));
       }

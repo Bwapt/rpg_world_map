@@ -1,0 +1,138 @@
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.96);
+  color: #f8fafc;
+}
+
+.leaflet-popup-content-wrapper {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.35);
+}
+
+.leaflet-popup-content {
+  margin: 14px 16px;
+}
+
+.leaflet-popup-close-button {
+  color: #cbd5e1 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #f8fafc !important;
+}
+
+.map-popup {
+  min-width: 248px;
+}
+
+.map-popup__title {
+  margin: 0 0 12px;
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.map-popup__field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.map-popup__field span {
+  display: block;
+  margin-bottom: 6px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.map-popup__field input,
+.map-popup__field textarea,
+.map-popup__field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.map-popup__field textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.map-popup__field select {
+  appearance: none;
+}
+
+.map-popup__color {
+  min-height: 44px;
+  padding: 4px !important;
+  cursor: pointer;
+}
+
+.map-popup__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.map-popup__button {
+  border: 0;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.map-popup__button.is-primary {
+  background: #2563eb;
+  color: #eff6ff;
+}
+
+.map-popup-preview {
+  min-width: 180px;
+}
+
+.map-popup-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #f8fafc;
+}
+
+.map-popup-preview__meta {
+  font-size: 16px;
+}
+
+.map-popup-preview p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.poi-icon-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+.poi-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.22);
+  color: #f8fafc;
+  font-size: 28px;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+  text-shadow: 0 3px 10px rgba(15, 23, 42, 0.6);
+}
