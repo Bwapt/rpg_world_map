@@ -26,6 +26,7 @@ class WorldApp {
     this.isPanelOpen = false;
     this.hiddenPois = new Set();
     this.hiddenAreas = new Set();
+    this.openMapIds = new Set();
   }
 
   async init() {
@@ -34,6 +35,8 @@ class WorldApp {
   }
 
   bindUI() {
+    this.preventPageZoom();
+
     this.menuToggle.addEventListener("click", () => {
       this.togglePanel(!this.isPanelOpen);
     });
@@ -41,6 +44,43 @@ class WorldApp {
     this.addMapButton.addEventListener("click", () => {
       this.openAddMapModal();
     });
+  }
+
+  preventPageZoom() {
+    document.addEventListener("wheel", (event) => {
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+
+      if (this.isMapEventTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+    }, { capture: true, passive: false });
+
+    document.addEventListener("gesturestart", (event) => {
+      if (!this.isMapEventTarget(event.target)) {
+        event.preventDefault();
+      }
+    }, { capture: true });
+
+    document.addEventListener("keydown", (event) => {
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      const isBrowserZoomShortcut = ["+", "-", "=", "0"].includes(key);
+
+      if (isBrowserZoomShortcut) {
+        event.preventDefault();
+      }
+    });
+  }
+
+  isMapEventTarget(target) {
+    return target instanceof Element && Boolean(target.closest("#map"));
   }
 
   async loadWorld(selectedMapId = this.activeMapId) {
@@ -52,6 +92,9 @@ class WorldApp {
     const needsRemount = !this.mapController || nextMapId !== this.activeMapId;
 
     this.activeMapId = nextMapId;
+    if (nextMapId) {
+      this.openMapIds.add(nextMapId);
+    }
     this.renderCurrentMapTitle(nextMap);
     this.renderWorldTree();
 
@@ -123,15 +166,32 @@ class WorldApp {
 
     this.worldTree.innerHTML = maps.map((map) => this.renderMapNode(map)).join("");
 
+    this.worldTree.querySelectorAll("[data-map-details]").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        const mapId = details.dataset.mapDetails;
+
+        if (details.open) {
+          this.openMapIds.add(mapId);
+          return;
+        }
+
+        this.openMapIds.delete(mapId);
+      });
+    });
+
     this.worldTree.querySelectorAll("[data-map-select]").forEach((button) => {
-      button.addEventListener("click", async () => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         const mapId = button.dataset.mapSelect;
+        this.openMapIds.add(mapId);
         await this.loadWorld(mapId);
       });
     });
 
     this.worldTree.querySelectorAll("[data-map-delete]").forEach((button) => {
       button.addEventListener("click", (event) => {
+        event.preventDefault();
         event.stopPropagation();
         this.openDeleteMapModal(button.dataset.mapDelete);
       });
@@ -186,13 +246,15 @@ class WorldApp {
 
   renderMapNode(map) {
     const isActive = map.id === this.activeMapId;
-    const poiItems = this.renderEntitySection("Points d'interets", "poi", map);
-    const areaItems = this.renderEntitySection("Regions", "area", map);
+    const isOpen = isActive || this.openMapIds.has(map.id);
+    const poiItems = this.renderEntitySection("Points d'intérêts", "poi", map);
+    const areaItems = this.renderEntitySection("Régions", "area", map);
     const label = this.escapeHTML(map.name || map.id);
 
     return `
-      <section class="world-map">
-        <div class="world-map__header">
+      <details class="world-map" data-map-details="${map.id}" ${isOpen ? "open" : ""}>
+        <summary class="world-map__header">
+          <span class="world-map__chevron" aria-hidden="true"></span>
           <button
             type="button"
             class="world-map__select ${isActive ? "is-active" : ""}"
@@ -208,12 +270,12 @@ class WorldApp {
           >
             🗑
           </button>
-        </div>
+        </summary>
         <div class="world-map__content">
           ${poiItems}
           ${areaItems}
         </div>
-      </section>
+      </details>
     `;
   }
 

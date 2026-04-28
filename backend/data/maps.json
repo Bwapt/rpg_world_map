@@ -4,16 +4,7 @@
       "id": "cite_franche",
       "name": "Cit\u00e9 Franche",
       "image": "assets/maps/cite_franche.png",
-      "pois": [
-        {
-          "id": "5cb834b7-de67-4990-84ca-d0c73f055cf1",
-          "name": "Auberge des Deux-Rives",
-          "description": "L'auberge de DINGUE en SAH",
-          "x": 3986,
-          "y": 1917.0856253243383,
-          "icon": "inn"
-        }
-      ],
+      "pois": [],
       "areas": [
         {
           "id": "726b63ef-75a0-4f05-a2d1-9879078f7d24",
