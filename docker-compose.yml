@@ -1,0 +1,49 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: rpg-world-map-backend
+    restart: unless-stopped
+    volumes:
+      - ./backend/data:/app/data
+      - ./frontend/assets/maps:/frontend/assets/maps
+    networks:
+      - rpg-world-map
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: rpg-world-map-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend/assets/maps:/usr/share/nginx/html/assets/maps:ro
+    networks:
+      - rpg-world-map
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: rpg-world-map-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - rpg-world-map
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: rpg-world-map-cloudflared
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    depends_on:
+      - nginx
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN:-missing_token}
+    networks:
+      - rpg-world-map
+
+networks:
+  rpg-world-map:
+    name: rpg-world-map

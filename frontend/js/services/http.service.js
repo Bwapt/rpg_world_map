@@ -5,8 +5,21 @@ class HttpClient {
   /**
    * @param {string} [baseURL] Origine du backend Flask.
    */
-  constructor(baseURL = "http://localhost:8001") {
+  constructor(baseURL = HttpClient.getDefaultBaseURL()) {
     this.baseURL = baseURL;
+  }
+
+  /**
+   * Garde le mode dev historique, tout en utilisant l'origine courante en Docker.
+   *
+   * @returns {string} Origine API par defaut.
+   */
+  static getDefaultBaseURL() {
+    if (window.location.hostname === "localhost" && window.location.port === "8000") {
+      return "http://localhost:8001";
+    }
+
+    return "";
   }
 
   /**

@@ -38,6 +38,17 @@ The script starts:
 - Flask API from `backend/app.py`.
 - Static frontend server from `frontend/`.
 
+## Docker Deployment
+
+The production target is a private Docker network with Nginx and Cloudflare Tunnel:
+
+- `frontend` serves static files.
+- `backend` serves the Flask API.
+- `nginx` proxies requests by Docker service name.
+- `cloudflared` exposes `maps.bwaptremotenetwork.com` without opening public app ports.
+
+See [docs/deployment.md](docs/deployment.md).
+
 ## API
 
 Main endpoints:
