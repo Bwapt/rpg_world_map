@@ -27,7 +27,11 @@ def create_poi():
         data["mapId"],
         "pois",
         data,
-        {"x": data["x"], "y": data["y"]},
+        {
+            "x": data["x"],
+            "y": data["y"],
+            "icon": data.get("icon", "default"),
+        },
     )
 
     if not poi:

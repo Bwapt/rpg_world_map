@@ -9,6 +9,8 @@ async function initMap(containerId, image) {
     crs: L.CRS.Simple,
     maxZoom: 1,
     minZoom: -2,
+    zoomDelta: 0.25,
+    zoomSnap: 0.25,
     maxBounds: bounds,
     doubleClickZoom: false
   });

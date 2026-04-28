@@ -27,7 +27,10 @@ def create_area():
         data["mapId"],
         "areas",
         data,
-        {"points": data.get("points", [])},
+        {
+            "points": data.get("points", []),
+            "color": data.get("color", "#3b82f6"),
+        },
     )
 
     if not area:

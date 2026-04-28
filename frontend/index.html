@@ -3,15 +3,16 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>RPG World Map</title>
-
-  <link rel="stylesheet" href="css/style.css?v=2" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <!-- Geoman -->
   <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+
+  <link rel="stylesheet" href="css/style.css?v=2" />
 </head>
 
 <body>
@@ -21,9 +22,11 @@
     <span></span>
   </button>
 
+  <div id="current-map-title" class="current-map-title"></div>
+
   <aside id="world-panel" class="world-panel" aria-hidden="true">
     <div class="world-panel__header">
-      <h1>Maps</h1>
+      <h1>RPG World Map</h1>
     </div>
     <div id="world-tree" class="world-tree"></div>
     <button id="add-map-button" class="world-panel__add" type="button">Ajouter une map</button>
