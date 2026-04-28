@@ -1,0 +1,230 @@
+/* Panneau lateral listant les maps et leurs entites. */
+.world-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1100;
+  width: var(--panel-width);
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.72);
+  border-right: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(-100%);
+  transition: transform 180ms ease;
+  backdrop-filter: blur(12px);
+}
+
+body.panel-open .world-panel {
+  transform: translateX(0);
+}
+
+.world-panel__header {
+  min-height: calc(var(--menu-offset) + var(--menu-size) + var(--menu-offset));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: var(--menu-offset) 20px var(--menu-offset) calc(var(--menu-offset) + var(--menu-size) + 24px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.world-panel__header h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.world-tree {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.world-tree__empty {
+  padding: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.32);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Noeud racine d'une map dans l'arbre. */
+.world-map {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.world-map + .world-map {
+  margin-top: 12px;
+}
+
+.world-map__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.world-map__header::-webkit-details-marker,
+.world-map__section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.world-map__chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(-45deg);
+  transition: transform 160ms ease;
+}
+
+.world-map[open] > .world-map__header .world-map__chevron {
+  transform: rotate(45deg);
+}
+
+.world-map__select,
+.world-map__delete,
+.world-panel__add {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.world-map__select {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  color: #f8fafc;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.world-map__select.is-active {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.world-map__delete {
+  width: 36px;
+  height: 36px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+  font-size: 16px;
+}
+
+.world-map__content {
+  padding: 0 12px 12px;
+}
+
+/* Sections POI/zones d'une map. */
+.world-map__section {
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+  padding-top: 10px;
+}
+
+.world-map__section + .world-map__section {
+  margin-top: 12px;
+}
+
+.world-map__section-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  cursor: pointer;
+}
+
+.world-map__section-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.world-map__section-title {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.world-map__section-count {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.world-map__list {
+  margin: 0;
+  padding: 8px 0 0;
+  list-style: none;
+}
+
+.world-map__list li {
+  padding: 4px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.world-map__list li:first-child {
+  border-top: 0;
+}
+
+/* Ligne d'entite avec action de focus et bouton de visibilite. */
+.world-map__entity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.world-map__entity-button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.world-map__entity-button:hover,
+.world-map__visibility-button:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.world-map__visibility-button {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.world-map__empty {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.world-panel__add {
+  margin: 16px;
+  padding: 14px 16px;
+  background: #2563eb;
+  color: #eff6ff;
+  font-size: 14px;
+  font-weight: 700;
+}

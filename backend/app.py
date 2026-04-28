@@ -1,3 +1,5 @@
+"""Point d'entree Flask de l'API RPG World Map."""
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -14,6 +16,7 @@ app.register_blueprint(world_bp)
 
 @app.get("/")
 def home():
+    """Retourne un statut minimal pour verifier que l'API repond."""
     return {"status": "ok"}
 
 if __name__ == "__main__":

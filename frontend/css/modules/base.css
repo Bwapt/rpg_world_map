@@ -1,0 +1,76 @@
+/* Socle global: variables, layout plein ecran, bouton menu et titre courant. */
+html,
+body {
+  --panel-width: 320px;
+  --menu-offset: 16px;
+  --menu-size: 44px;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #111827;
+}
+
+#map {
+  width: 100vw;
+  height: 100vh;
+}
+
+.menu-toggle {
+  position: fixed;
+  top: var(--menu-offset);
+  left: var(--menu-offset);
+  z-index: 1200;
+  width: var(--menu-size);
+  height: var(--menu-size);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+/* Le titre doit rester lisible au-dessus de Leaflet sans bloquer la map. */
+.current-map-title {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1150;
+  max-width: min(560px, calc(100vw - 160px));
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #f8fafc;
+  padding: 12px 22px;
+  font-size: 20px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
+}
+
+/* Decale les controles Leaflet sous le titre et le panneau lateral. */
+.leaflet-top.leaflet-left {
+  top: 68px;
+}
+
+body.panel-open .leaflet-left {
+  left: calc(var(--panel-width) + 16px);
+  transition: left 180ms ease;
+}

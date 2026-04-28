@@ -1,3 +1,10 @@
+/**
+ * Initialise une carte Leaflet en coordonnees d'image.
+ *
+ * @param {string} containerId Identifiant DOM du conteneur Leaflet.
+ * @param {string} image URL de l'image de map.
+ * @returns {Promise<L.Map>} Instance Leaflet cadree sur l'image.
+ */
 async function initMap(containerId, image) {
   const img = new Image();
   img.src = image;

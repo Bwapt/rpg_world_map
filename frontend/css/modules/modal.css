@@ -1,0 +1,85 @@
+/* Modales globales: ajout de map et confirmation de suppression. */
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  pointer-events: none;
+}
+
+.modal-root.is-open {
+  pointer-events: auto;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  width: min(100%, 420px);
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  color: #f8fafc;
+  padding: 20px;
+}
+
+.modal h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.modal label {
+  display: block;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.modal input {
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  padding: 10px 12px;
+}
+
+.modal input[type="file"] {
+  padding: 8px;
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modal__actions button {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+.modal__cancel {
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+}
+
+.modal__confirm {
+  background: #2563eb;
+  color: #eff6ff;
+}
+
+.modal__confirm.is-danger {
+  background: #dc2626;
+}
