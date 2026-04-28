@@ -4,6 +4,9 @@ import HttpClient from "./services/http.service.js";
 import WorldService from "./services/world.service.js";
 import PoiService from "./services/poi.service.js";
 import AreaService from "./services/area.service.js";
+import ModalManager from "./ui/modal.manager.js";
+import VisibilityManager from "./ui/visibility.manager.js";
+import SidebarRenderer from "./ui/sidebar.renderer.js";
 
 class WorldApp {
   constructor() {
@@ -24,9 +27,11 @@ class WorldApp {
     this.activeMapId = null;
     this.mapController = null;
     this.isPanelOpen = false;
-    this.hiddenPois = new Set();
-    this.hiddenAreas = new Set();
     this.openMapIds = new Set();
+
+    this.visibilityManager = new VisibilityManager();
+    this.modalManager = new ModalManager(this.modalRoot);
+    this.sidebarRenderer = new SidebarRenderer(this.worldTree);
   }
 
   async init() {
@@ -121,7 +126,7 @@ class WorldApp {
     );
 
     await this.mapController.init();
-    this.applyVisibilityState();
+    this.visibilityManager.applyVisibilityState(this.mapController);
   }
 
   destroyMap() {
@@ -157,290 +162,74 @@ class WorldApp {
   }
 
   renderWorldTree() {
-    const maps = this.world?.maps || [];
-
-    if (!maps.length) {
-      this.worldTree.innerHTML = `<div class="world-tree__empty">Aucune map</div>`;
-      return;
-    }
-
-    this.worldTree.innerHTML = maps.map((map) => this.renderMapNode(map)).join("");
-
-    this.worldTree.querySelectorAll("[data-map-details]").forEach((details) => {
-      details.addEventListener("toggle", () => {
-        const mapId = details.dataset.mapDetails;
-
-        if (details.open) {
-          this.openMapIds.add(mapId);
-          return;
-        }
-
-        this.openMapIds.delete(mapId);
-      });
-    });
-
-    this.worldTree.querySelectorAll("[data-map-select]").forEach((button) => {
-      button.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const mapId = button.dataset.mapSelect;
-        this.openMapIds.add(mapId);
-        await this.loadWorld(mapId);
-      });
-    });
-
-    this.worldTree.querySelectorAll("[data-map-delete]").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        this.openDeleteMapModal(button.dataset.mapDelete);
-      });
-    });
-
-    this.worldTree.querySelectorAll("[data-visibility-toggle]").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const entityId = button.dataset.entityId;
-        const entityType = button.dataset.entityType;
-
-        this.toggleEntityVisibility(entityType, entityId);
-      });
-    });
-
-    this.worldTree.querySelectorAll("[data-section-visibility]").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const type = button.dataset.entityType;
-        const mapId = button.dataset.mapId;
-        this.toggleSectionVisibility(type, mapId);
-      });
-    });
-
-    this.worldTree.querySelectorAll(".world-map__entity-button[data-entity-id]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const entityId = button.dataset.entityId;
-        const entityType = button.dataset.entityType;
-        const mapId = button.dataset.mapId;
-
-        if (mapId && mapId !== this.activeMapId) {
-          await this.loadWorld(mapId);
-        }
-
-        if (!this.mapController) {
-          return;
-        }
-
-        if (entityType === "poi") {
-          this.mapController.focusPoi(entityId);
-          return;
-        }
-
-        if (entityType === "area") {
-          this.mapController.focusArea(entityId);
-        }
-      });
-    });
+    this.sidebarRenderer.render(
+      this.world,
+      this.mapController,
+      (mapId, isOpen) => this.onMapToggle(mapId, isOpen),
+      (mapId) => this.openDeleteMapModal(mapId),
+      (type, entityId) => this.onEntityToggleVisibility(type, entityId),
+      (type, mapId) => this.onSectionToggleVisibility(type, mapId),
+      (mapId, entityType, entityId) => this.onEntityClick(mapId, entityType, entityId),
+      (type, entityId) => this.visibilityManager.isEntityHidden(type, entityId),
+      this.activeMapId,
+      this.openMapIds
+    );
   }
 
-  renderMapNode(map) {
-    const isActive = map.id === this.activeMapId;
-    const isOpen = isActive || this.openMapIds.has(map.id);
-    const poiItems = this.renderEntitySection("Points d'intérêts", "poi", map);
-    const areaItems = this.renderEntitySection("Régions", "area", map);
-    const label = this.escapeHTML(map.name || map.id);
-
-    return `
-      <details class="world-map" data-map-details="${map.id}" ${isOpen ? "open" : ""}>
-        <summary class="world-map__header">
-          <span class="world-map__chevron" aria-hidden="true"></span>
-          <button
-            type="button"
-            class="world-map__select ${isActive ? "is-active" : ""}"
-            data-map-select="${map.id}"
-          >
-            ${label}
-          </button>
-          <button
-            type="button"
-            class="world-map__delete"
-            data-map-delete="${map.id}"
-            aria-label="Supprimer ${label}"
-          >
-            🗑
-          </button>
-        </summary>
-        <div class="world-map__content">
-          ${poiItems}
-          ${areaItems}
-        </div>
-      </details>
-    `;
-  }
-
-  renderEntitySection(title, type, map) {
-    const items = type === "poi" ? (map.pois || []) : (map.areas || []);
-    const hiddenCount = items.filter((item) => this.isEntityHidden(type, item.id)).length;
-    const allHidden = items.length > 0 && hiddenCount === items.length;
-    const icon = allHidden ? "◌" : "●";
-
-    return `
-      <details class="world-map__section" open>
-        <summary class="world-map__section-summary">
-          <span class="world-map__section-title">${title}</span>
-          <span class="world-map__section-tools">
-            <span class="world-map__section-count">${items.length}</span>
-            <button
-              type="button"
-              class="world-map__visibility-button"
-              data-section-visibility="true"
-              data-entity-type="${type}"
-              data-map-id="${map.id}"
-              aria-label="${allHidden ? "Afficher" : "Masquer"} ${title}"
-            >${icon}</button>
-          </span>
-        </summary>
-        ${this.renderEntityList(type, map.id, items)}
-      </details>
-    `;
-  }
-
-  renderEntityList(type, mapId, items) {
-    if (!items.length) {
-      return `<div class="world-map__empty">Aucun</div>`;
-    }
-
-    return `
-      <ul class="world-map__list">
-        ${items.map((item) => `
-          <li>
-            <div class="world-map__entity-row">
-              <button
-                type="button"
-                class="world-map__entity-button"
-                data-entity-type="${type}"
-                data-entity-id="${item.id}"
-                data-map-id="${mapId}"
-              >
-                ${this.escapeHTML(item.name || "Sans nom")}
-              </button>
-              <button
-              type="button"
-              class="world-map__visibility-button"
-              data-visibility-toggle="true"
-              data-entity-type="${type}"
-              data-entity-id="${item.id}"
-              aria-label="${this.isEntityHidden(type, item.id) ? "Afficher" : "Masquer"} ${this.escapeHTML(item.name || "Sans nom")}"
-              >${this.isEntityHidden(type, item.id) ? "◌" : "●"}</button>
-            </div>
-          </li>
-        `).join("")}
-      </ul>
-    `;
-  }
-
-  isEntityHidden(type, entityId) {
-    const set = type === "poi" ? this.hiddenPois : this.hiddenAreas;
-    return set.has(entityId);
-  }
-
-  toggleEntityVisibility(type, entityId) {
-    const set = type === "poi" ? this.hiddenPois : this.hiddenAreas;
-    const isHidden = set.has(entityId);
-    const nextIsVisible = isHidden;
-
-    if (isHidden) {
-      set.delete(entityId);
+  onMapToggle(mapId, isOpen) {
+    if (isOpen) {
+      this.openMapIds.add(mapId);
     } else {
-      set.add(entityId);
+      this.openMapIds.delete(mapId);
     }
+  }
 
-    this.applyEntityVisibility(type, entityId, nextIsVisible);
+  onEntityToggleVisibility(type, entityId) {
+    this.visibilityManager.toggleEntityVisibility(type, entityId);
+    const isVisible = !this.visibilityManager.isEntityHidden(type, entityId);
+    this.visibilityManager.applyEntityVisibility(this.mapController, type, entityId, isVisible);
     this.renderWorldTree();
   }
 
-  toggleSectionVisibility(type, mapId) {
+  onSectionToggleVisibility(type, mapId) {
     const map = (this.world?.maps || []).find((item) => item.id === mapId);
     if (!map) {
       return;
     }
 
     const items = type === "poi" ? (map.pois || []) : (map.areas || []);
-    const allHidden = items.length > 0 && items.every((item) => this.isEntityHidden(type, item.id));
-    const set = type === "poi" ? this.hiddenPois : this.hiddenAreas;
+    const wasAllHidden = this.visibilityManager.toggleSectionVisibility(type, items);
 
     items.forEach((item) => {
-      if (allHidden) {
-        set.delete(item.id);
-      } else {
-        set.add(item.id);
-      }
-
-      this.applyEntityVisibility(type, item.id, allHidden);
+      const isVisible = wasAllHidden;
+      this.visibilityManager.applyEntityVisibility(this.mapController, type, item.id, isVisible);
     });
 
     this.renderWorldTree();
   }
 
-  applyVisibilityState() {
-    this.hiddenPois.forEach((poiId) => this.mapController?.setPoiVisibility(poiId, false));
-    this.hiddenAreas.forEach((areaId) => this.mapController?.setAreaVisibility(areaId, false));
-  }
+  async onEntityClick(mapId, entityType, entityId) {
+    if (mapId && mapId !== this.activeMapId) {
+      await this.loadWorld(mapId);
+    }
 
-  applyEntityVisibility(type, entityId, isVisible) {
     if (!this.mapController) {
       return;
     }
 
-    if (type === "poi") {
-      this.mapController.setPoiVisibility(entityId, isVisible);
+    if (entityType === "poi") {
+      this.mapController.focusPoi(entityId);
       return;
     }
 
-    this.mapController.setAreaVisibility(entityId, isVisible);
+    if (entityType === "area") {
+      this.mapController.focusArea(entityId);
+    }
   }
 
   openAddMapModal() {
-    const content = document.createElement("div");
-    content.className = "modal";
-    content.innerHTML = `
-      <h2>Ajouter une map</h2>
-      <label>
-        Nom
-        <input name="name" type="text" />
-      </label>
-      <label>
-        Image
-        <input name="image" type="file" accept="image/*" />
-      </label>
-      <div class="modal__actions">
-        <button type="button" class="modal__cancel" data-action="cancel">Annuler</button>
-        <button type="button" class="modal__confirm" data-action="confirm">Valider</button>
-      </div>
-    `;
-
-    const { close } = this.openModal(content);
-    const nameInput = content.querySelector('[name="name"]');
-    const imageInput = content.querySelector('[name="image"]');
-
-    content.querySelector('[data-action="cancel"]').addEventListener("click", close);
-    content.querySelector('[data-action="confirm"]').addEventListener("click", async () => {
-      const name = nameInput.value.trim();
-      const image = imageInput.files[0];
-
-      if (!name) {
-        nameInput.focus();
-        return;
-      }
-
-      if (!image) {
-        imageInput.focus();
-        return;
-      }
-
-      const response = await this.worldService.createMap({ name, image });
-      close();
+    this.modalManager.openAddMapModal(async (data) => {
+      const response = await this.worldService.createMap(data);
       this.togglePanel(true);
       await this.loadWorld(response.map.id);
     });
@@ -452,61 +241,15 @@ class WorldApp {
       return;
     }
 
-    const content = document.createElement("div");
-    content.className = "modal";
-    content.innerHTML = `
-      <h2>Supprimer la map</h2>
-      <p>${this.escapeHTML(map.name || map.id)}</p>
-      <div class="modal__actions">
-        <button type="button" class="modal__cancel" data-action="cancel">Annuler</button>
-        <button type="button" class="modal__confirm is-danger" data-action="confirm">Supprimer</button>
-      </div>
-    `;
-
-    const { close } = this.openModal(content);
-    content.querySelector('[data-action="cancel"]').addEventListener("click", close);
-    content.querySelector('[data-action="confirm"]').addEventListener("click", async () => {
+    this.modalManager.openDeleteMapModal(map, async () => {
       const maps = this.world?.maps || [];
       const nextMapId = mapId === this.activeMapId
         ? maps.find((item) => item.id !== mapId)?.id || null
         : this.activeMapId;
 
       await this.worldService.deleteMap(mapId);
-      close();
       await this.loadWorld(nextMapId);
     });
-  }
-
-  openModal(content) {
-    this.modalRoot.innerHTML = "";
-    this.modalRoot.classList.add("is-open");
-
-    const overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.appendChild(content);
-    this.modalRoot.appendChild(overlay);
-
-    const close = () => {
-      this.modalRoot.classList.remove("is-open");
-      this.modalRoot.innerHTML = "";
-    };
-
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
-        close();
-      }
-    });
-
-    return { close };
-  }
-
-  escapeHTML(value) {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
   }
 }
 
