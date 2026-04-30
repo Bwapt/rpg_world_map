@@ -13,6 +13,10 @@ venv/
 .env.*
 !.env.example
 
+# User data
+backend/data/maps.json
+frontend/assets/maps/
+
 # OS / editor noise
 .DS_Store
 Thumbs.db

@@ -13,8 +13,12 @@ MAPS_DIR = PROJECT_ROOT / "frontend" / "assets" / "maps"
 
 def load_world():
     """Charge le monde depuis le fichier JSON et complete les champs optionnels."""
-    with open(FILE_PATH, "r", encoding="utf-8") as file:
-        world = json.load(file)
+    try:
+        with open(FILE_PATH, "r", encoding="utf-8") as file:
+            world = json.load(file)
+    except FileNotFoundError:
+        # Si le fichier n'existe pas, retourne un monde vide
+        world = {"maps": []}
 
     for map_data in world.get("maps", []):
         map_data.setdefault("name", prettify_map_name(map_data["id"]))

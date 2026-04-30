@@ -13,25 +13,125 @@ The app lets you load illustrated maps, place points of interest, draw regions, 
 - Edit, move, hide, focus, and delete map entities.
 - JSON-backed persistence for a lightweight v1.
 
-## Stack
+## Data Management
 
-- Frontend: vanilla JavaScript ES modules, Leaflet, Leaflet-Geoman, CSS modules by UI area.
-- Backend: Flask, Flask-CORS, JSON file persistence.
-- Data: `backend/data/maps.json`.
-- Static assets: `frontend/assets/maps/`.
+The app stores user data in `backend/data/maps.json`, which is not committed to git. If the file doesn't exist, the app starts with an empty world.
+
+- Example data structure: `backend/data/maps.json.example`
+- Uploaded map images are stored in `frontend/assets/maps/`
+- All user data persists locally and is not included in the repository
 
 ## Run
 
-Start both servers:
+Prerequisites:
+
+- Python 3 installed.
+- `pip` available for Python.
+- (Optional) Node.js installed to run npm scripts.
+- Docker + Docker Compose available for containerized launch.
+
+Local launch:
 
 ```bash
+chmod +x ./run.sh
 ./run.sh
+```
+
+or with npm:
+
+```bash
+npm start
 ```
 
 Then open:
 
 - Frontend: `http://localhost:8000`
 - Backend: `http://localhost:8001`
+
+If you prefer to run backend and frontend separately:
+
+```bash
+npm run backend
+npm run frontend
+```
+
+### Maintenance
+
+Clean up temporary files and caches:
+
+```bash
+npm run clean
+```
+
+Docker launch (local):
+
+#### Option 1: With nginx proxy (recommended for production-like setup)
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Start the local stack with nginx proxy:
+
+```bash
+npm run docker:up
+```
+
+3. Stop the local stack:
+
+```bash
+npm run docker:down
+```
+
+The app is available at:
+
+- Frontend: `http://localhost:8080`
+
+#### Option 2: Direct ports (simpler for development)
+
+For development without nginx complexity:
+
+```bash
+npm run docker:dev:up
+```
+
+This exposes:
+- Frontend: `http://localhost:8000`
+- Backend: `http://localhost:8001`
+
+Stop with:
+
+```bash
+npm run docker:down
+```
+
+Docker launch (Cloudflare Tunnel):
+
+This mode is optional and only required if you want to expose the app through Cloudflare.
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Start the stack with the tunnel profile:
+
+```bash
+npm run docker:tunnel:up
+```
+
+3. Stop the stack:
+
+```bash
+npm run docker:down
+```
+
+The public app endpoint is the configured Cloudflare hostname, for example:
+
+- `https://maps.bwaptremotenetwork.com`
 
 The script starts:
 
@@ -40,14 +140,21 @@ The script starts:
 
 ## Docker Deployment
 
-The production target is a private Docker network with Nginx and Cloudflare Tunnel:
+The project supports multiple Docker configurations:
 
-- `frontend` serves static files.
-- `backend` serves the Flask API.
-- `nginx` proxies requests by Docker service name.
-- `cloudflared` exposes `maps.bwaptremotenetwork.com` without opening public app ports.
+### Production-like setup (with nginx)
+- Uses nginx as reverse proxy for clean URL routing
+- Frontend and backend communicate through internal Docker network
+- Single entry point at `http://localhost:8080`
+- Recommended for production deployment or when you want the full stack experience
 
-See [docs/deployment.md](docs/deployment.md).
+### Development setup (direct ports)
+- No nginx complexity
+- Frontend and backend exposed on separate ports
+- CORS enabled for cross-origin requests
+- Simpler for development and debugging
+
+Both setups support the optional Cloudflare Tunnel overlay for public access.
 
 ## API
 

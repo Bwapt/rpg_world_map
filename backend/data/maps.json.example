@@ -1,0 +1,32 @@
+{
+  "maps": [
+    {
+      "id": "example_map",
+      "name": "Example Map",
+      "image": "assets/maps/example.png",
+      "pois": [
+        {
+          "id": "example-poi-1",
+          "name": "Example POI",
+          "description": "This is an example point of interest",
+          "x": 1000,
+          "y": 1000,
+          "icon": "default"
+        }
+      ],
+      "areas": [
+        {
+          "id": "example-area-1",
+          "name": "Example Area",
+          "description": "This is an example region",
+          "points": [
+            {"x": 500, "y": 500},
+            {"x": 1500, "y": 500},
+            {"x": 1500, "y": 1500},
+            {"x": 500, "y": 1500}
+          ]
+        }
+      ]
+    }
+  ]
+}

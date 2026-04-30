@@ -1,20 +1,53 @@
 # Deployment
 
-This project is designed to run behind a private Docker network.
+This project supports multiple deployment strategies for different use cases.
 
-Only Cloudflare Tunnel reaches the stack from the outside. The frontend, backend, and Nginx services do not expose public host ports in the production compose file.
+## Docker Configurations
 
-## Architecture
+### 1. Production-like Setup (with nginx)
+
+The traditional setup uses nginx as a reverse proxy:
 
 ```text
 Internet
-  -> Cloudflare DNS maps.bwaptremotenetwork.com
-  -> Cloudflare Tunnel
-  -> cloudflared container
-  -> nginx container
-  -> frontend container
-  -> backend container
+  -> nginx:80
+  -> frontend:80 (static files)
+  -> backend:8001 (API)
 ```
+
+**Use when:**
+- You want production-like architecture
+- Single entry point for the application
+- Clean URL routing without CORS complexity
+- Preparing for real production deployment
+
+**Start:**
+```bash
+docker compose --profile nginx up --build
+```
+
+### 2. Development Setup (direct ports)
+
+Simplified setup without nginx:
+
+```text
+Internet
+  -> frontend:8000 (static files)
+  -> backend:8001 (API)
+```
+
+**Use when:**
+- Development and testing
+- Debugging individual services
+- Simpler Docker setup
+- No need for nginx complexity
+
+**Start:**
+```bash
+docker compose up --build
+```
+
+## Architecture
 
 Nginx reaches containers by Docker service name:
 
@@ -23,13 +56,15 @@ Nginx reaches containers by Docker service name:
 
 ## Production Start
 
+Cloudflare Tunnel is optional. The main app stack does not require a Cloudflare domain to run locally.
+
 Create `.env` from the example:
 
 ```bash
 cp .env.example .env
 ```
 
-Set the tunnel token:
+Set the tunnel token only if you want to use Cloudflare Tunnel:
 
 ```env
 CLOUDFLARED_TOKEN=your_cloudflare_tunnel_token
@@ -38,19 +73,19 @@ CLOUDFLARED_TOKEN=your_cloudflare_tunnel_token
 Start the stack with the tunnel profile:
 
 ```bash
-docker compose --profile tunnel up -d --build
+docker compose --profile nginx --profile tunnel up -d --build
 ```
 
 Check containers:
 
 ```bash
-docker compose --profile tunnel ps
+docker compose --profile nginx --profile tunnel ps
 ```
 
 Follow logs:
 
 ```bash
-docker compose --profile tunnel logs -f nginx cloudflared
+docker compose logs -f nginx cloudflared
 ```
 
 ## Cloudflare Tunnel Target
@@ -71,10 +106,10 @@ Because `cloudflared` and `nginx` share the same Docker network, Cloudflare only
 
 ## Local Docker Test
 
-For a local smoke test without Cloudflare, use the local override file:
+For a local smoke test without Cloudflare, use the nginx profile:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build backend frontend nginx
+docker compose --profile nginx up -d --build
 ```
 
 Then open:
@@ -86,7 +121,7 @@ http://localhost:8080
 Stop the local stack:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.local.yml down
+docker compose down
 ```
 
 ## Persistence
@@ -119,7 +154,7 @@ All other requests go to the frontend container.
 Rebuild after code changes:
 
 ```bash
-docker compose --profile tunnel up -d --build
+docker compose --profile nginx --profile tunnel up -d --build
 ```
 
 Restart only the backend:
