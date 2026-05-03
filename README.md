@@ -109,29 +109,35 @@ npm run docker:down
 
 Docker launch (Cloudflare Tunnel):
 
-This mode is optional and only required if you want to expose the app through Cloudflare.
+This mode is optional and only required if you want to expose the app through Cloudflare Tunnel.
 
-1. Copy the example environment file:
+1. Set up Cloudflare Tunnel:
+   - Create a tunnel in Cloudflare Zero Trust dashboard
+   - Get the tunnel token
+   - Configure the tunnel to route your hostname (e.g., `maps.yourdomain.com`) to `http://host.docker.internal:8080` (or your host IP:8080 if host.docker.internal doesn't work)
+
+2. Copy the example environment file and configure:
 
 ```bash
 cp .env.example .env
+# Edit .env to add your CLOUDFLARED_TOKEN
 ```
 
-2. Start the stack with the tunnel profile:
+3. Start the stack with the tunnel profile:
 
 ```bash
 npm run docker:tunnel:up
 ```
 
-3. Stop the stack:
+4. Stop the stack:
 
 ```bash
 npm run docker:down
 ```
 
-The public app endpoint is the configured Cloudflare hostname, for example:
+The public app endpoint is your configured Cloudflare hostname, for example:
 
-- `https://maps.bwaptremotenetwork.com`
+- `https://maps.yourdomain.com`
 
 The script starts:
 
