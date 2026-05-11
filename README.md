@@ -77,23 +77,24 @@ Stop the stack:
 docker compose down --volumes --remove-orphans
 ```
 
-The app is available at:
+Docker Compose does not publish host ports. It starts two private services on the
+`rpg_world_map` Docker network:
 
-- Frontend: `http://localhost:8000`
-- Backend: `http://localhost:8001`
+- `frontend`: Nginx serving the static app on container port `80`.
+- `backend`: Flask/Gunicorn API on container port `8001`.
 
-The Docker stack starts:
-
-- Flask/Gunicorn API from `backend/`.
-- Static frontend server from `frontend/`.
+The frontend image expects a local `frontend/nginx.conf` file at build time.
+This file is ignored by Git and can contain your personal reverse-proxy/API
+proxy setup.
 
 ## Docker Deployment
 
 This project uses a simple Docker Compose setup.
 
-- Frontend: `http://localhost:8000`
-- Backend: `http://localhost:8001`
-- The Docker services also share the private `rpg_world_map` network.
+- No host ports are published by `docker-compose.yml`.
+- Docker services share the private `rpg_world_map` network.
+- The external entrypoint should target the `frontend` container on port `80`.
+- The frontend Nginx container can proxy API routes to `backend:8001` internally.
 
 Start the stack:
 
@@ -171,8 +172,9 @@ Before tagging or merging a v1 release, verify:
 
 - The app opens at `http://localhost:8000`.
 - The backend answers at `http://localhost:8001/world`.
-- Docker mode exposes the frontend at `http://localhost:8000`.
-- Docker mode exposes the backend at `http://localhost:8001`.
+- Docker mode starts without publishing host ports.
+- Docker mode builds the frontend image with the local ignored
+  `frontend/nginx.conf`.
 - A map can be added with an image.
 - A POI can be created, edited, focused, hidden, and deleted.
 - A region can be drawn, edited, focused, hidden, and deleted.

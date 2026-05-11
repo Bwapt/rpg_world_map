@@ -1,27 +1,28 @@
 # Deployment
 
-This project uses Docker Compose to run a simple local frontend/backend stack.
+This project uses Docker Compose to run the frontend and backend as private
+containers on the same Docker network.
 
 ## Docker Setup
 
 The stack includes:
 
-- `frontend`: static web app served on container port `80`.
+- `frontend`: Nginx serving the static web app on container port `80`.
 - `backend`: Flask/Gunicorn API on container port `8001`.
 - `rpg_world_map`: private Docker network shared by both services.
 
-`docker-compose.yml` publishes the local development ports:
+`docker-compose.yml` does not publish host ports.
 
-- Frontend: `http://localhost:8000`
-- Backend: `http://localhost:8001`
+The frontend image expects a local `frontend/nginx.conf` file at build time.
+That file is ignored by Git and can contain environment-specific routing.
 
 ## Routing
 
-In local Docker mode, the browser loads the frontend from `localhost:8000` and
-the API from `localhost:8001`.
+In Docker mode, the browser should reach the app through your external entrypoint
+targeting the `frontend` container.
 
-The frontend HTTP client automatically targets `localhost:8001` when the app is
-opened on port `8000`. API endpoints are served by the backend:
+The local frontend Nginx config can proxy API routes to `backend:8001` on the
+private Docker network. API endpoints are served by the backend:
 
 - `/world`
 - `/maps`
@@ -66,12 +67,13 @@ This mode exposes:
 
 The backend writes uploaded images to its mounted `/app/frontend/assets/maps`
 path. The frontend serves the same host directory read-only from
-`/app/assets/maps`.
+`/usr/share/nginx/html/assets/maps`.
 
 ## Frontend Cache
 
 The frontend is served as native JavaScript modules without a bundler. Module
 entrypoints use query-string versions to avoid stale module code after redeploys.
+Your local `frontend/nginx.conf` may also set cache headers if needed.
 
 ## Useful Commands
 

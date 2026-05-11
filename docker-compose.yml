@@ -4,8 +4,6 @@ services:
       context: ./backend
     container_name: rpg-world-map-backend
     restart: unless-stopped
-    ports:
-      - "8001:8001"
     volumes:
       - ./backend/data:/app/data
       - ./frontend/assets/maps:/app/frontend/assets/maps
@@ -19,10 +17,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "8000:80"
     volumes:
-      - ./frontend/assets/maps:/app/assets/maps:ro
+      - ./frontend/assets/maps:/usr/share/nginx/html/assets/maps:ro
     networks:
       - rpg_world_map
 
