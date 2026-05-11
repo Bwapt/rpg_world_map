@@ -1,9 +1,11 @@
 """Routes Flask dediees aux points d'interet."""
 
 from flask import Blueprint, request
+from services.event_stream import publish
 from services.world_service import (
     create_entity,
     delete_entity,
+    get_entity_context,
     get_map_by_id,
     update_entity,
 )
@@ -41,17 +43,20 @@ def create_poi():
     if not poi:
         return {"error": "map not found"}, 404
 
+    publish("poi:created", {"mapId": data["mapId"], "poi": poi})
     return {"poi": poi}
 
 
 @poi_bp.delete("/poi/<poi_id>")
 def delete_poi(poi_id):
     """Supprime un POI par identifiant."""
+    map_data, poi = get_entity_context(poi_id, "pois")
     deleted = delete_entity(poi_id, "pois")
 
     if not deleted:
         return {"error": "poi not found"}, 404
 
+    publish("poi:deleted", {"mapId": map_data["id"], "poiId": poi_id, "poi": poi})
     return {"status": "deleted"}
 
 
@@ -64,4 +69,6 @@ def update_poi(poi_id):
     if not poi:
         return {"error": "poi not found"}, 404
 
+    map_data, _ = get_entity_context(poi_id, "pois")
+    publish("poi:updated", {"mapId": map_data["id"], "poi": poi})
     return {"status": "updated", "poi": poi}

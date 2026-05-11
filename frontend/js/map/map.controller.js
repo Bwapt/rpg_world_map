@@ -109,13 +109,13 @@ class MapController {
    */
   openPoiForm(layer, poi = null) {
     this.formBuilder.openPoiForm(layer, poi, (poiData, layer) => {
-      layer.data = poiData;
-
       if (!poi?.id) {
-        MapUtils.applyPoiMarkerIcon(layer, poiData.icon);
-        this.layerManager.poiLayers.set(poiData.id, layer);
-        this.layerEvents.bindPoiLayerEvents(layer);
+        layer.remove();
+        this.upsertRemotePoi(poiData);
+        this.notifyChange();
+        return;
       } else {
+        layer.data = poiData;
         this.layerManager.updatePoiLayer(poiData.id, poiData, (item) => this.buildPopupContent(item));
       }
       layer.bindPopup(this.buildPopupContent(poiData));
@@ -132,12 +132,13 @@ class MapController {
    */
   openAreaForm(layer, area = null) {
     this.formBuilder.openAreaForm(layer, area, (areaData, layer) => {
-      layer.data = areaData;
-
       if (!area?.id) {
-        this.layerManager.areaLayers.set(areaData.id, layer);
-        this.layerEvents.bindAreaLayerEvents(layer);
+        layer.remove();
+        this.upsertRemoteArea(areaData);
+        this.notifyChange();
+        return;
       } else {
+        layer.data = areaData;
         this.layerManager.updateAreaLayer(areaData.id, areaData, (item) => this.buildPopupContent(item));
       }
       layer.bindPopup(this.buildPopupContent(areaData));
@@ -233,6 +234,127 @@ class MapController {
     if (!isVisible && onMap) {
       layer.remove();
     }
+  }
+
+  /**
+   * Applique une modification recue d'un autre client sans remonter toute la map.
+   *
+   * @param {{type: string, payload: object}} event Evenement distant.
+   * @returns {boolean} True si la map active a ete modifiee.
+   */
+  applyRemoteChange(event) {
+    const { type, payload } = event;
+    if (!payload || payload.mapId !== this.mapId) {
+      return false;
+    }
+
+    if (type === "poi:created") {
+      this.upsertRemotePoi(payload.poi);
+      return true;
+    }
+
+    if (type === "poi:updated") {
+      this.upsertRemotePoi(payload.poi);
+      return true;
+    }
+
+    if (type === "poi:deleted") {
+      this.removeRemotePoi(payload.poiId);
+      return true;
+    }
+
+    if (type === "area:created") {
+      this.upsertRemoteArea(payload.area);
+      return true;
+    }
+
+    if (type === "area:updated") {
+      this.upsertRemoteArea(payload.area);
+      return true;
+    }
+
+    if (type === "area:deleted") {
+      this.removeRemoteArea(payload.areaId);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Ajoute ou met a jour un POI recu du serveur.
+   *
+   * @param {object} poi Donnees du POI.
+   * @returns {void}
+   */
+  upsertRemotePoi(poi) {
+    if (!poi?.id) {
+      return;
+    }
+
+    const layer = this.layerManager.getPoiLayer(poi.id);
+    if (layer) {
+      this.layerManager.updatePoiLayer(poi.id, poi, (item) => this.buildPopupContent(item));
+      return;
+    }
+
+    const newLayer = this.layerManager.addPoiLayer(poi, (item) => this.buildPopupContent(item));
+    newLayer.addTo(this.map);
+    this.layerEvents.bindPoiLayerEvents(newLayer);
+  }
+
+  /**
+   * Supprime un POI recu du serveur.
+   *
+   * @param {string} poiId Identifiant du POI.
+   * @returns {void}
+   */
+  removeRemotePoi(poiId) {
+    const layer = this.layerManager.getPoiLayer(poiId);
+    if (!layer) {
+      return;
+    }
+
+    layer.remove();
+    this.layerManager.poiLayers.delete(poiId);
+  }
+
+  /**
+   * Ajoute ou met a jour une zone recue du serveur.
+   *
+   * @param {object} area Donnees de la zone.
+   * @returns {void}
+   */
+  upsertRemoteArea(area) {
+    if (!area?.id) {
+      return;
+    }
+
+    const layer = this.layerManager.getAreaLayer(area.id);
+    if (layer) {
+      this.layerManager.updateAreaLayer(area.id, area, (item) => this.buildPopupContent(item));
+      return;
+    }
+
+    const newLayer = this.layerManager.addAreaLayer(area, (item) => this.buildPopupContent(item));
+    newLayer.addTo(this.map);
+    this.layerEvents.bindAreaLayerEvents(newLayer);
+  }
+
+  /**
+   * Supprime une zone recue du serveur.
+   *
+   * @param {string} areaId Identifiant de la zone.
+   * @returns {void}
+   */
+  removeRemoteArea(areaId) {
+    const layer = this.layerManager.getAreaLayer(areaId);
+    if (!layer) {
+      return;
+    }
+
+    layer.remove();
+    this.layerManager.areaLayers.delete(areaId);
   }
 
   /**

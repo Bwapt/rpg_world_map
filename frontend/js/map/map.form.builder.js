@@ -52,7 +52,7 @@ class MapFormBuilder {
    */
   buildPoiFormContainer(poi) {
     const container = document.createElement("div");
-    const title = poi ? "Modifier le Point d'intérêt" : "Creer le Point d'intérêt";
+    const title = poi ? "Modifier le Point d'intérêt" : "Créer le Point d'intérêt";
 
     container.innerHTML = `
       <div class="map-popup">
@@ -94,7 +94,7 @@ class MapFormBuilder {
    */
   buildAreaFormContainer(area) {
     const container = document.createElement("div");
-    const title = area ? "Modifier la zone" : "Creer la zone";
+    const title = area ? "Modifier la zone" : "Créer la zone";
 
     container.innerHTML = `
       <div class="map-popup">

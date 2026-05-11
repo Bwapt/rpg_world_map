@@ -139,6 +139,18 @@ def update_entity(entity_id, collection_name, payload):
     return None
 
 
+def get_entity_context(entity_id, collection_name):
+    """Retourne la map et l'entite qui contient l'identifiant donne."""
+    world = load_world()
+
+    for map_data in world["maps"]:
+        for entity in map_data[collection_name]:
+            if entity.get("id") == entity_id:
+                return map_data, entity
+
+    return None, None
+
+
 def delete_entity(entity_id, collection_name):
     """Supprime une entite existante dans toutes les maps."""
     world = load_world()

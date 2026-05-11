@@ -9,6 +9,8 @@ import VisibilityManager from "../ui/visibility.manager.js";
 import SidebarRenderer from "../ui/sidebar.renderer.js";
 import PageZoomGuard from "./page-zoom.guard.js";
 
+const WORLD_SYNC_INTERVAL_MS = 60000;
+
 /**
  * Application principale: charge le monde, monte la map active et coordonne l'UI.
  */
@@ -24,17 +26,23 @@ class WorldApp {
     this.areaService = new AreaService(http);
 
     this.menuToggle = document.querySelector("#menu-toggle");
+    this.fullscreenToggle = document.querySelector("#fullscreen-toggle");
     this.worldPanel = document.querySelector("#world-panel");
     this.worldTree = document.querySelector("#world-tree");
     this.addMapButton = document.querySelector("#add-map-button");
     this.modalRoot = document.querySelector("#modal-root");
     this.currentMapTitle = document.querySelector("#current-map-title");
+    this.mapLoading = document.querySelector("#map-loading");
 
     this.world = null;
     this.activeMapId = null;
     this.mapController = null;
     this.isPanelOpen = false;
     this.openMapIds = new Set();
+    this.worldSyncTimer = null;
+    this.isSyncingWorld = false;
+    this.lastActiveMapSignature = null;
+    this.eventSource = null;
 
     this.pageZoomGuard = new PageZoomGuard();
     this.visibilityManager = new VisibilityManager();
@@ -50,6 +58,8 @@ class WorldApp {
   async init() {
     this.bindUI();
     await this.loadWorld();
+    this.startRealtimeSync();
+    this.startWorldSync();
   }
 
   /**
@@ -67,6 +77,54 @@ class WorldApp {
     this.addMapButton.addEventListener("click", () => {
       this.openAddMapModal();
     });
+
+    if (!document.fullscreenEnabled) {
+      this.fullscreenToggle.hidden = true;
+      return;
+    }
+
+    this.fullscreenToggle.addEventListener("click", () => {
+      this.toggleFullscreen();
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      this.updateFullscreenButton();
+      window.setTimeout(() => {
+        this.mapController?.map.invalidateSize();
+      }, 80);
+    });
+  }
+
+  /**
+   * Active ou quitte le mode plein ecran navigateur.
+   *
+   * @returns {Promise<void>}
+   */
+  async toggleFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    await document.documentElement.requestFullscreen();
+  }
+
+  /**
+   * Synchronise le bouton avec l'etat plein ecran courant.
+   *
+   * @returns {void}
+   */
+  updateFullscreenButton() {
+    const isFullscreen = Boolean(document.fullscreenElement);
+    this.fullscreenToggle.classList.toggle("is-active", isFullscreen);
+    this.fullscreenToggle.setAttribute(
+      "aria-label",
+      isFullscreen ? "Quitter le plein ecran" : "Passer en plein ecran"
+    );
+    this.fullscreenToggle.setAttribute(
+      "title",
+      isFullscreen ? "Quitter le plein ecran" : "Passer en plein ecran"
+    );
   }
 
   /**
@@ -98,6 +156,8 @@ class WorldApp {
     if (needsRemount) {
       await this.mountMap(nextMap);
     }
+
+    this.lastActiveMapSignature = this.getMapSignature(nextMap);
   }
 
   /**
@@ -108,20 +168,59 @@ class WorldApp {
    */
   async mountMap(mapData) {
     this.destroyMap();
+    this.updateMapLoading({ isVisible: true, percent: 0 });
 
-    const map = await initMap("map", mapData.image);
-    this.mapController = new MapController(
-      map,
-      mapData.id,
-      this.poiService,
-      this.areaService,
-      {
-        onChange: () => this.refreshSidebar()
-      }
-    );
+    try {
+      const map = await initMap("map", mapData.image, (progress) => {
+        this.updateMapLoading({
+          isVisible: true,
+          percent: progress.percent
+        });
+      });
+      this.mapController = new MapController(
+        map,
+        mapData.id,
+        this.poiService,
+        this.areaService,
+        {
+          onChange: () => this.refreshSidebar()
+        }
+      );
 
-    await this.mapController.init();
-    this.visibilityManager.applyVisibilityState(this.mapController);
+      await this.mapController.init();
+      this.visibilityManager.applyVisibilityState(this.mapController);
+    } finally {
+      this.updateMapLoading({ isVisible: false, percent: 100 });
+    }
+  }
+
+  /**
+   * Met a jour l'overlay de chargement de l'image de map.
+   *
+   * @param {{isVisible: boolean, percent: number|null}} state Etat d'affichage.
+   * @returns {void}
+   */
+  updateMapLoading({ isVisible, percent }) {
+    if (!this.mapLoading) {
+      return;
+    }
+
+    const label = this.mapLoading.querySelector("[data-map-loading-label]");
+    const bar = this.mapLoading.querySelector("[data-map-loading-bar]");
+
+    this.mapLoading.classList.toggle("is-visible", isVisible);
+    this.mapLoading.setAttribute("aria-hidden", String(!isVisible));
+
+    if (typeof percent === "number") {
+      this.mapLoading.classList.remove("is-indeterminate");
+      label.textContent = `${percent}%`;
+      bar.style.width = `${percent}%`;
+      return;
+    }
+
+    this.mapLoading.classList.add("is-indeterminate");
+    label.textContent = "Chargement";
+    bar.style.width = "";
   }
 
   /**
@@ -163,6 +262,172 @@ class WorldApp {
     this.world = await this.worldService.getWorld();
     this.activeMapId = selectedMapId;
     this.renderWorldTree();
+    this.lastActiveMapSignature = this.getMapSignature(this.getActiveMap());
+  }
+
+  /**
+   * Lance la synchronisation periodique avec les modifications faites par d'autres clients.
+   *
+   * @returns {void}
+   */
+  startWorldSync() {
+    if (this.worldSyncTimer) {
+      return;
+    }
+
+    this.worldSyncTimer = window.setInterval(() => {
+      this.syncWorldFromServer();
+    }, WORLD_SYNC_INTERVAL_MS);
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        this.syncWorldFromServer();
+      }
+    });
+  }
+
+  /**
+   * Ouvre le flux temps reel des modifications faites par les autres clients.
+   *
+   * @returns {void}
+   */
+  startRealtimeSync() {
+    if (this.eventSource || !window.EventSource) {
+      return;
+    }
+
+    const eventsURL = `${HttpClient.getDefaultBaseURL()}/events`;
+    this.eventSource = new EventSource(eventsURL);
+
+    [
+      "poi:created",
+      "poi:updated",
+      "poi:deleted",
+      "area:created",
+      "area:updated",
+      "area:deleted"
+    ].forEach((eventType) => {
+      this.eventSource.addEventListener(eventType, (event) => {
+        this.handleRemoteWorldEvent(event);
+      });
+    });
+  }
+
+  /**
+   * Applique un evenement serveur a la map active.
+   *
+   * @param {MessageEvent} message EventSource message.
+   * @returns {Promise<void>}
+   */
+  async handleRemoteWorldEvent(message) {
+    if (!this.mapController) {
+      return;
+    }
+
+    try {
+      const event = JSON.parse(message.data);
+      const changedActiveMap = this.mapController.applyRemoteChange(event);
+      if (!changedActiveMap) {
+        return;
+      }
+
+      await this.refreshSidebar();
+    } catch (error) {
+      console.warn("Evenement temps reel ignore", error);
+    }
+  }
+
+  /**
+   * Recharge le monde en arriere-plan et remonte la map active si ses entites ont change.
+   *
+   * @returns {Promise<void>}
+   */
+  async syncWorldFromServer() {
+    if (this.isSyncingWorld || !this.world) {
+      return;
+    }
+
+    this.isSyncingWorld = true;
+
+    try {
+      const nextWorld = await this.worldService.getWorld();
+      const nextMaps = nextWorld.maps || [];
+      const previousMapId = this.activeMapId;
+      const nextMap = nextMaps.find((map) => map.id === previousMapId) || nextMaps[0] || null;
+      const nextMapId = nextMap?.id || null;
+      const nextSignature = this.getMapSignature(nextMap);
+      const currentSignature = this.lastActiveMapSignature;
+
+      this.world = nextWorld;
+      this.activeMapId = nextMapId;
+      if (nextMapId) {
+        this.openMapIds.add(nextMapId);
+      }
+
+      this.renderCurrentMapTitle(nextMap);
+      this.renderWorldTree();
+
+      if (!nextMapId) {
+        this.destroyMap();
+        this.lastActiveMapSignature = null;
+        return;
+      }
+
+      if (nextMapId !== previousMapId || nextSignature !== currentSignature) {
+        await this.mountMap(nextMap);
+        this.lastActiveMapSignature = nextSignature;
+      }
+    } catch (error) {
+      console.warn("Synchronisation du monde impossible", error);
+    } finally {
+      this.isSyncingWorld = false;
+    }
+  }
+
+  /**
+   * Retourne la map active depuis l'etat courant.
+   *
+   * @returns {object|null} Map active.
+   */
+  getActiveMap() {
+    return (this.world?.maps || []).find((map) => map.id === this.activeMapId) || null;
+  }
+
+  /**
+   * Produit une signature stable des donnees visibles d'une map.
+   *
+   * @param {object|null} mapData Donnees de map.
+   * @returns {string|null} Signature comparable.
+   */
+  getMapSignature(mapData) {
+    if (!mapData) {
+      return null;
+    }
+
+    const normalizePoi = (poi) => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.description,
+      icon: poi.icon,
+      x: poi.x,
+      y: poi.y
+    });
+
+    const normalizeArea = (area) => ({
+      id: area.id,
+      name: area.name,
+      description: area.description,
+      color: area.color,
+      points: area.points || []
+    });
+
+    return JSON.stringify({
+      id: mapData.id,
+      name: mapData.name,
+      image: mapData.image,
+      pois: (mapData.pois || []).map(normalizePoi).sort((a, b) => String(a.id).localeCompare(String(b.id))),
+      areas: (mapData.areas || []).map(normalizeArea).sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    });
   }
 
   /**
@@ -286,10 +551,12 @@ class WorldApp {
    * @returns {void}
    */
   openAddMapModal() {
-    this.modalManager.openAddMapModal(async (data) => {
-      const response = await this.worldService.createMap(data);
-      this.togglePanel(true);
-      await this.loadWorld(response.map.id);
+    this.modalManager.openAddMapModal(async (data, onProgress) => {
+      const response = await this.worldService.createMap(data, onProgress);
+      window.setTimeout(async () => {
+        this.togglePanel(true);
+        await this.loadWorld(response.map.id);
+      }, 0);
     });
   }
 

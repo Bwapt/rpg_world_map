@@ -4,17 +4,99 @@ body {
   --panel-width: 320px;
   --menu-offset: 16px;
   --menu-size: 44px;
+  --app-bg: #171611;
+  --app-surface: rgba(37, 33, 25, 0.9);
+  --app-surface-hover: rgba(48, 43, 32, 0.94);
+  --app-border: rgba(151, 128, 87, 0.34);
+  --app-text: #f1ead8;
+  --app-muted: #b8ad91;
+  --app-accent: #76b6a3;
   margin: 0;
   padding: 0;
   height: 100%;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  background: #111827;
+  background: var(--app-bg);
 }
 
 #map {
   width: 100vw;
   height: 100vh;
+  background: var(--app-bg);
+}
+
+.leaflet-container {
+  background: var(--app-bg);
+}
+
+.map-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--app-bg);
+  transition: opacity 160ms ease;
+}
+
+.map-loading.is-visible {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.map-loading__panel {
+  display: grid;
+  justify-items: stretch;
+  width: min(640px, calc(100vw - 48px));
+  margin-inline: auto;
+}
+
+.map-loading__brand {
+  margin-bottom: 28px;
+  color: #0d0c09;
+  font-size: clamp(30px, 6.4vw, 64px);
+  font-weight: 1000;
+  line-height: 0.95;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 0 rgba(211, 184, 126, 0.1),
+    0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.map-loading__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  color: var(--app-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.map-loading__track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(111, 94, 62, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(151, 128, 87, 0.14);
+}
+
+.map-loading__bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--app-accent);
+  transition: width 120ms ease;
+}
+
+.map-loading.is-indeterminate .map-loading__bar {
+  width: 38%;
+  animation: map-loading-slide 1.2s ease-in-out infinite;
 }
 
 .menu-toggle {
@@ -24,9 +106,9 @@ body {
   z-index: 1200;
   width: var(--menu-size);
   height: var(--menu-size);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(15, 23, 42, 0.92);
+  background: var(--app-surface);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -39,7 +121,87 @@ body {
   display: block;
   height: 2px;
   border-radius: 999px;
-  background: #f8fafc;
+  background: var(--app-text);
+}
+
+.fullscreen-toggle {
+  position: fixed;
+  top: var(--menu-offset);
+  right: var(--menu-offset);
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  width: var(--menu-size);
+  height: var(--menu-size);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.fullscreen-toggle:hover {
+  background: var(--app-surface-hover);
+}
+
+.fullscreen-toggle__icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.fullscreen-toggle__icon span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-color: currentColor;
+  border-style: solid;
+  transition: inset 120ms ease;
+}
+
+.fullscreen-toggle__icon span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.fullscreen-toggle__icon span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-width: 2px 2px 0 0;
+}
+
+.fullscreen-toggle__icon span:nth-child(3) {
+  right: 0;
+  bottom: 0;
+  border-width: 0 2px 2px 0;
+}
+
+.fullscreen-toggle__icon span:nth-child(4) {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 2px 2px;
+}
+
+.fullscreen-toggle.is-active .fullscreen-toggle__icon span:nth-child(1) {
+  top: 4px;
+  left: 4px;
+}
+
+.fullscreen-toggle.is-active .fullscreen-toggle__icon span:nth-child(2) {
+  top: 4px;
+  right: 4px;
+}
+
+.fullscreen-toggle.is-active .fullscreen-toggle__icon span:nth-child(3) {
+  right: 4px;
+  bottom: 4px;
+}
+
+.fullscreen-toggle.is-active .fullscreen-toggle__icon span:nth-child(4) {
+  bottom: 4px;
+  left: 4px;
 }
 
 /* Le titre doit rester lisible au-dessus de Leaflet sans bloquer la map. */
@@ -50,10 +212,10 @@ body {
   transform: translateX(-50%);
   z-index: 1150;
   max-width: min(560px, calc(100vw - 160px));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(151, 128, 87, 0.28);
   border-radius: 14px;
-  background: rgba(15, 23, 42, 0.62);
-  color: #f8fafc;
+  background: rgba(37, 33, 25, 0.72);
+  color: var(--app-text);
   padding: 12px 22px;
   font-size: 20px;
   font-weight: 700;
@@ -62,7 +224,36 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 28px rgba(8, 7, 5, 0.22);
+}
+
+.leaflet-bar {
+  border-color: var(--app-border) !important;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: rgba(239, 231, 211, 0.92);
+  border-bottom-color: rgba(151, 128, 87, 0.28);
+  color: #302816;
+}
+
+.leaflet-bar a:hover {
+  background: #f6edd7;
+}
+
+.leaflet-bar a.leaflet-disabled {
+  background: rgba(207, 196, 172, 0.72);
+  color: rgba(48, 40, 22, 0.36);
+}
+
+.leaflet-control-attribution {
+  background: rgba(239, 231, 211, 0.82) !important;
+  color: #4a3b21;
+}
+
+.leaflet-control-attribution a {
+  color: #256d63;
 }
 
 /* Decale les controles Leaflet sous le titre et le panneau lateral. */
@@ -73,4 +264,14 @@ body {
 body.panel-open .leaflet-left {
   left: calc(var(--panel-width) + 16px);
   transition: left 180ms ease;
+}
+
+@keyframes map-loading-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(280%);
+  }
 }

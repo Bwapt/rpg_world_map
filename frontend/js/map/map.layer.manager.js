@@ -67,6 +67,9 @@ class MapLayerManager {
     }
 
     layer.data = poiData;
+    if (Number.isFinite(poiData.y) && Number.isFinite(poiData.x)) {
+      layer.setLatLng([poiData.y, poiData.x]);
+    }
     MapUtils.applyPoiMarkerIcon(layer, poiData.icon);
     layer.bindPopup(buildPopupContent(poiData));
   }
@@ -86,6 +89,9 @@ class MapLayerManager {
     }
 
     layer.data = areaData;
+    if (Array.isArray(areaData.points)) {
+      layer.setLatLngs(areaData.points.map((point) => [point.y, point.x]));
+    }
     layer.setStyle(MapUtils.getAreaStyle(areaData));
     layer.bindPopup(buildPopupContent(areaData));
   }

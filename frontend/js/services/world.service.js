@@ -20,13 +20,16 @@ class WorldService {
    * Cree une map avec upload d'image via FormData.
    *
    * @param {{name: string, image: File}} mapInput Donnees saisies dans la modale.
+   * @param {Function} [onProgress] Callback de progression d'upload.
    * @returns {Promise<object>} Reponse API contenant la map creee.
    */
-  createMap({ name, image }) {
+  createMap({ name, image }, onProgress) {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("image", image);
-    return this.http.post("/maps", formData);
+    return typeof onProgress === "function"
+      ? this.http.postWithUploadProgress("/maps", formData, onProgress)
+      : this.http.post("/maps", formData);
   }
 
   /**

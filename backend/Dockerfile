@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 8001
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "--worker-class", "gthread", "--threads", "8", "app:app"]

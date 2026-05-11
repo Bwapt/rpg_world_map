@@ -13,7 +13,7 @@
 .modal-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.62);
+  background: rgba(10, 9, 7, 0.68);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,11 +22,12 @@
 
 .modal {
   width: min(100%, 420px);
-  background: rgba(15, 23, 42, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(37, 33, 25, 0.96);
+  border: 1px solid rgba(151, 128, 87, 0.32);
   border-radius: 8px;
-  color: #f8fafc;
+  color: var(--app-text);
   padding: 20px;
+  box-shadow: 0 22px 46px rgba(8, 7, 5, 0.42);
 }
 
 .modal h2 {
@@ -37,7 +38,7 @@
 .modal label {
   display: block;
   margin-bottom: 12px;
-  color: #cbd5e1;
+  color: var(--app-muted);
   font-size: 13px;
 }
 
@@ -45,15 +46,77 @@
   width: 100%;
   margin-top: 6px;
   box-sizing: border-box;
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  border: 1px solid rgba(151, 128, 87, 0.34);
   border-radius: 8px;
-  background: rgba(15, 23, 42, 0.72);
-  color: #f8fafc;
+  background: rgba(24, 21, 16, 0.78);
+  color: var(--app-text);
   padding: 10px 12px;
+}
+
+.modal input:focus {
+  outline: 2px solid rgba(118, 182, 163, 0.42);
+  outline-offset: 1px;
+  border-color: rgba(118, 182, 163, 0.58);
 }
 
 .modal input[type="file"] {
   padding: 8px;
+}
+
+.modal__help {
+  display: block;
+  margin-top: 6px;
+  color: #b8ad91;
+  font-size: 12px;
+}
+
+.modal__error {
+  margin: 4px 0 12px;
+  color: #e8a08f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modal__error[hidden] {
+  display: none;
+}
+
+.modal-progress {
+  margin-top: 14px;
+}
+
+.modal-progress[hidden] {
+  display: none;
+}
+
+.modal-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #d5c8aa;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modal-progress__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(151, 128, 87, 0.18);
+}
+
+.modal-progress__bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--app-accent);
+  transition: width 120ms ease;
+}
+
+.modal-progress.is-indeterminate .modal-progress__bar {
+  width: 42%;
+  animation: modal-progress-slide 1.1s ease-in-out infinite;
 }
 
 .modal__actions {
@@ -70,16 +133,33 @@
   padding: 10px 14px;
 }
 
+.modal__actions button:disabled,
+.modal input:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .modal__cancel {
-  background: rgba(148, 163, 184, 0.16);
-  color: #e2e8f0;
+  background: rgba(151, 128, 87, 0.18);
+  color: #e8ddc2;
 }
 
 .modal__confirm {
-  background: #2563eb;
-  color: #eff6ff;
+  background: #2f7469;
+  color: #effaf5;
 }
 
 .modal__confirm.is-danger {
-  background: #dc2626;
+  background: #8e3b2f;
+  color: #fff1e8;
+}
+
+@keyframes modal-progress-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
 }

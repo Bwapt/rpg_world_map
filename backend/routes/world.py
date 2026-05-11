@@ -1,6 +1,9 @@
 """Routes Flask liees au monde global et aux maps."""
 
-from flask import Blueprint, request, jsonify
+import queue
+
+from flask import Blueprint, Response, jsonify, request, stream_with_context
+from services.event_stream import format_sse, subscribe, unsubscribe
 from services.world_service import create_map, delete_map, load_world, save_world
 
 world_bp = Blueprint("world", __name__)
@@ -10,6 +13,33 @@ world_bp = Blueprint("world", __name__)
 def get_world():
     """Retourne le monde complet avec ses maps, POI et zones."""
     return jsonify(load_world())
+
+
+@world_bp.get("/events")
+def get_events():
+    """Ouvre un flux Server-Sent Events pour les modifications du monde."""
+    subscriber = subscribe()
+
+    def stream():
+        try:
+            yield ": connected\n\n"
+            while True:
+                try:
+                    event = subscriber.get(timeout=25)
+                    yield format_sse(event)
+                except queue.Empty:
+                    yield ": keep-alive\n\n"
+        finally:
+            unsubscribe(subscriber)
+
+    return Response(
+        stream_with_context(stream()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @world_bp.post("/world")

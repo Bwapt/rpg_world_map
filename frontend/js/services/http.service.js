@@ -59,6 +59,49 @@ class HttpClient {
   }
 
   /**
+   * Execute une requete avec suivi de progression d'upload.
+   *
+   * @param {"POST"|"PATCH"} method Methode HTTP.
+   * @param {string} endpoint Chemin API, slash initial inclus.
+   * @param {FormData} data Corps multipart a envoyer.
+   * @param {(progress: {loaded: number, total: number, percent: number|null}) => void} [onProgress] Callback de progression.
+   * @returns {Promise<object>} Corps JSON renvoye par l'API.
+   */
+  requestWithUploadProgress(method, endpoint, data, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, `${this.baseURL}${endpoint}`);
+      xhr.responseType = "json";
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (typeof onProgress !== "function") {
+          return;
+        }
+
+        onProgress({
+          loaded: event.loaded,
+          total: event.lengthComputable ? event.total : 0,
+          percent: event.lengthComputable ? Math.round((event.loaded / event.total) * 100) : null
+        });
+      });
+
+      xhr.addEventListener("load", () => {
+        const result = xhr.response || {};
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(result.error || `HTTP ${xhr.status}`));
+          return;
+        }
+
+        resolve(result);
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Erreur réseau pendant l'upload")));
+      xhr.addEventListener("abort", () => reject(new Error("Upload annulé")));
+      xhr.send(data);
+    });
+  }
+
+  /**
    * @param {string} endpoint Chemin API a lire.
    * @returns {Promise<object>} Reponse JSON.
    */
@@ -73,6 +116,16 @@ class HttpClient {
    */
   post(endpoint, data) {
     return this.request("POST", endpoint, data);
+  }
+
+  /**
+   * @param {string} endpoint Chemin API a creer.
+   * @param {FormData} data Donnees multipart a envoyer.
+   * @param {Function} [onProgress] Callback de progression.
+   * @returns {Promise<object>} Reponse JSON.
+   */
+  postWithUploadProgress(endpoint, data, onProgress) {
+    return this.requestWithUploadProgress("POST", endpoint, data, onProgress);
   }
 
   /**
