@@ -7,8 +7,8 @@ import uuid
 
 
 FILE_PATH = Path(__file__).resolve().parents[1] / "data" / "maps.json"
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MAPS_DIR = PROJECT_ROOT / "frontend" / "assets" / "maps"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]  # = /app
+MAPS_DIR = PROJECT_ROOT / "frontend" / "assets" / "maps"  # = /app/frontend/assets/maps
 
 
 def load_world():

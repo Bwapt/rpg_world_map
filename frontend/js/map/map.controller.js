@@ -109,6 +109,8 @@ class MapController {
    */
   openPoiForm(layer, poi = null) {
     this.formBuilder.openPoiForm(layer, poi, (poiData, layer) => {
+      layer.data = poiData;
+
       if (!poi?.id) {
         MapUtils.applyPoiMarkerIcon(layer, poiData.icon);
         this.layerManager.poiLayers.set(poiData.id, layer);
@@ -130,6 +132,8 @@ class MapController {
    */
   openAreaForm(layer, area = null) {
     this.formBuilder.openAreaForm(layer, area, (areaData, layer) => {
+      layer.data = areaData;
+
       if (!area?.id) {
         this.layerManager.areaLayers.set(areaData.id, layer);
         this.layerEvents.bindAreaLayerEvents(layer);

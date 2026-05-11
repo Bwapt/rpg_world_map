@@ -11,7 +11,7 @@ venv/
 .codex
 .env
 .env.*
-!.env.example
+nginx.conf
 
 # User data
 backend/data/maps.json

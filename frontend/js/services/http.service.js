@@ -15,8 +15,10 @@ class HttpClient {
    * @returns {string} Origine API par defaut.
    */
   static getDefaultBaseURL() {
-    if (window.location.hostname === "localhost" && window.location.port === "8000") {
-      return "http://localhost:8001";
+    const { protocol, hostname, port } = window.location;
+
+    if (port === "8000") {
+      return `${protocol}//${hostname}:8001`;
     }
 
     return "";
@@ -44,7 +46,10 @@ class HttpClient {
 
     const response = await fetch(`${this.baseURL}${endpoint}`, config);
 
-    const result = await response.json();
+    const contentType = response.headers.get("Content-Type") || "";
+    const result = contentType.includes("application/json")
+      ? await response.json()
+      : { error: `HTTP ${response.status}` };
 
     if (!response.ok) {
       throw new Error(result.error || `HTTP ${response.status}`);

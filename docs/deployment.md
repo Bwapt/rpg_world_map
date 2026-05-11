@@ -1,170 +1,100 @@
 # Deployment
 
-This project supports multiple deployment strategies for different use cases.
+This project uses Docker Compose to run a simple local frontend/backend stack.
 
-## Docker Configurations
+## Docker Setup
 
-### 1. Production-like Setup (with nginx)
+The stack includes:
 
-The traditional setup uses nginx as a reverse proxy:
+- `frontend`: static web app served on container port `80`.
+- `backend`: Flask/Gunicorn API on container port `8001`.
+- `rpg_world_map`: private Docker network shared by both services.
 
-```text
-Internet
-  -> nginx:80
-  -> frontend:80 (static files)
-  -> backend:8001 (API)
-```
+`docker-compose.yml` publishes the local development ports:
 
-**Use when:**
-- You want production-like architecture
-- Single entry point for the application
-- Clean URL routing without CORS complexity
-- Preparing for real production deployment
-
-**Start:**
-```bash
-docker compose --profile nginx up --build
-```
-
-### 2. Development Setup (direct ports)
-
-Simplified setup without nginx:
-
-```text
-Internet
-  -> frontend:8000 (static files)
-  -> backend:8001 (API)
-```
-
-**Use when:**
-- Development and testing
-- Debugging individual services
-- Simpler Docker setup
-- No need for nginx complexity
-
-**Start:**
-```bash
-docker compose up --build
-```
-
-## Architecture
-
-Nginx reaches containers by Docker service name:
-
-- `frontend:80`
-- `backend:8001`
-
-## Production Start
-
-Cloudflare Tunnel is optional. The main app stack does not require a Cloudflare domain to run locally.
-
-Create `.env` from the example:
-
-```bash
-cp .env.example .env
-```
-
-Set the tunnel token only if you want to use Cloudflare Tunnel:
-
-```env
-CLOUDFLARED_TOKEN=your_cloudflare_tunnel_token
-```
-
-Start the stack with the tunnel profile:
-
-```bash
-docker compose --profile nginx --profile tunnel up -d --build
-```
-
-Check containers:
-
-```bash
-docker compose --profile nginx --profile tunnel ps
-```
-
-Follow logs:
-
-```bash
-docker compose logs -f nginx cloudflared
-```
-
-## Cloudflare Tunnel Target
-
-In Cloudflare Zero Trust, the public hostname should be:
-
-```text
-maps.bwaptremotenetwork.com
-```
-
-The tunnel service target should be:
-
-```text
-http://nginx:80
-```
-
-Because `cloudflared` and `nginx` share the same Docker network, Cloudflare only needs the internal service name.
-
-## Local Docker Test
-
-For a local smoke test without Cloudflare, use the nginx profile:
-
-```bash
-docker compose --profile nginx up -d --build
-```
-
-Then open:
-
-```text
-http://localhost:8080
-```
-
-Stop the local stack:
-
-```bash
-docker compose down
-```
-
-## Persistence
-
-The JSON world data is persisted on the host:
-
-```text
-backend/data/maps.json
-```
-
-Uploaded map images are persisted on the host and shared with the frontend container:
-
-```text
-frontend/assets/maps/
-```
+- Frontend: `http://localhost:8000`
+- Backend: `http://localhost:8001`
 
 ## Routing
 
-The browser calls the same origin in production. Nginx routes API endpoints to the backend:
+In local Docker mode, the browser loads the frontend from `localhost:8000` and
+the API from `localhost:8001`.
+
+The frontend HTTP client automatically targets `localhost:8001` when the app is
+opened on port `8000`. API endpoints are served by the backend:
 
 - `/world`
 - `/maps`
 - `/poi`
 - `/area`
 
-All other requests go to the frontend container.
+## Start The Stack
+
+```bash
+docker compose up -d --build
+```
+
+## Stop The Stack
+
+```bash
+docker compose down --volumes --remove-orphans
+```
+
+## Local Non-Docker Mode
+
+For direct local development without Docker:
+
+```bash
+./run.sh
+```
+
+or:
+
+```bash
+npm start
+```
+
+This mode exposes:
+
+- Frontend: `http://localhost:8000`
+- Backend: `http://localhost:8001`
+
+## Persistence
+
+- Uploaded map images are persisted on the host in `frontend/assets/maps/`.
+- JSON world data is persisted on the host in `backend/data/maps.json`.
+
+The backend writes uploaded images to its mounted `/app/frontend/assets/maps`
+path. The frontend serves the same host directory read-only from
+`/app/assets/maps`.
+
+## Frontend Cache
+
+The frontend is served as native JavaScript modules without a bundler. Module
+entrypoints use query-string versions to avoid stale module code after redeploys.
 
 ## Useful Commands
 
-Rebuild after code changes:
+Rebuild and start:
 
 ```bash
-docker compose --profile nginx --profile tunnel up -d --build
+docker compose up -d --build
 ```
 
-Restart only the backend:
+Restart only the frontend:
 
 ```bash
-docker compose restart backend
+docker compose up -d --build frontend
+```
+
+Check containers:
+
+```bash
+docker compose ps
 ```
 
 Inspect the private network:
 
 ```bash
-docker network inspect rpg-world-map
+docker network inspect rpg_world_map
 ```

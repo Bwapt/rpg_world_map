@@ -12,10 +12,9 @@
     "frontend": "cd frontend && python -m http.server 8000",
     "clean": "bash ./clean.sh",
     "docker:build": "docker compose build",
-    "docker:up": "docker compose --profile nginx up --build",
+    "docker:up": "docker compose up --build",
     "docker:dev:up": "docker compose up --build",
-    "docker:tunnel:up": "docker compose --profile nginx --profile tunnel up -d --build",
-    "docker:down": "docker compose down",
+    "docker:down": "docker compose down --volumes --remove-orphans",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

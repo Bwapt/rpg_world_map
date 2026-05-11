@@ -10,49 +10,22 @@ services:
       - ./backend/data:/app/data
       - ./frontend/assets/maps:/app/frontend/assets/maps
     networks:
-      - rpg-world-map
+      - rpg_world_map
 
   frontend:
     build:
       context: ./frontend
     container_name: rpg-world-map-frontend
     restart: unless-stopped
+    depends_on:
+      - backend
     ports:
       - "8000:80"
     volumes:
-      - ./frontend/assets/maps:/usr/share/nginx/html/assets/maps:ro
+      - ./frontend/assets/maps:/app/assets/maps:ro
     networks:
-      - rpg-world-map
-
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: rpg-world-map-nginx
-    restart: unless-stopped
-    profiles:
-      - nginx
-    depends_on:
-      - backend
-      - frontend
-    ports:
-      - "${NGINX_HTTP_PORT:-8080}:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    networks:
-      - rpg-world-map
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: rpg-world-map-cloudflared
-    restart: unless-stopped
-    profiles:
-      - tunnel
-    depends_on:
-      - nginx
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN:-missing_token}
-    network_mode: host
-    networks:
-      - rpg-world-map
+      - rpg_world_map
 
 networks:
-  rpg-world-map:
-    name: rpg-world-map
+  rpg_world_map:
+    name: rpg_world_map

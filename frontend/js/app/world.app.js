@@ -115,7 +115,9 @@ class WorldApp {
       mapData.id,
       this.poiService,
       this.areaService,
-      { onChange: () => this.refreshSidebar() }
+      {
+        onChange: () => this.refreshSidebar()
+      }
     );
 
     await this.mapController.init();

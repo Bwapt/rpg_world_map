@@ -173,6 +173,8 @@ class MapFormBuilder {
           mapId: this.mapId,
           ...payload
         });
+        onSave(response.poi, layer);
+        return;
       }
 
       layer.closePopup();
@@ -227,6 +229,8 @@ class MapFormBuilder {
           mapId: this.mapId,
           ...payload
         });
+        onSave(response.area, layer);
+        return;
       }
 
       layer.closePopup();

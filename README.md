@@ -65,102 +65,47 @@ npm run clean
 
 Docker launch (local):
 
-#### Option 1: With nginx proxy (recommended for production-like setup)
-
-1. Copy the example environment file:
+Start the stack with Docker Compose:
 
 ```bash
-cp .env.example .env
+docker compose up --build
 ```
 
-2. Start the local stack with nginx proxy:
+Stop the stack:
 
 ```bash
-npm run docker:up
-```
-
-3. Stop the local stack:
-
-```bash
-npm run docker:down
+docker compose down --volumes --remove-orphans
 ```
 
 The app is available at:
 
-- Frontend: `http://localhost:8080`
-
-#### Option 2: Direct ports (simpler for development)
-
-For development without nginx complexity:
-
-```bash
-npm run docker:dev:up
-```
-
-This exposes:
 - Frontend: `http://localhost:8000`
 - Backend: `http://localhost:8001`
 
-Stop with:
+The Docker stack starts:
 
-```bash
-npm run docker:down
-```
-
-Docker launch (Cloudflare Tunnel):
-
-This mode is optional and only required if you want to expose the app through Cloudflare Tunnel.
-
-1. Set up Cloudflare Tunnel:
-   - Create a tunnel in Cloudflare Zero Trust dashboard
-   - Get the tunnel token
-   - Configure the tunnel to route your hostname (e.g., `maps.yourdomain.com`) to `http://host.docker.internal:8080` (or your host IP:8080 if host.docker.internal doesn't work)
-
-2. Copy the example environment file and configure:
-
-```bash
-cp .env.example .env
-# Edit .env to add your CLOUDFLARED_TOKEN
-```
-
-3. Start the stack with the tunnel profile:
-
-```bash
-npm run docker:tunnel:up
-```
-
-4. Stop the stack:
-
-```bash
-npm run docker:down
-```
-
-The public app endpoint is your configured Cloudflare hostname, for example:
-
-- `https://maps.yourdomain.com`
-
-The script starts:
-
-- Flask API from `backend/app.py`.
+- Flask/Gunicorn API from `backend/`.
 - Static frontend server from `frontend/`.
 
 ## Docker Deployment
 
-The project supports multiple Docker configurations:
+This project uses a simple Docker Compose setup.
 
-### Production-like setup (with nginx)
-- Uses nginx as reverse proxy for clean URL routing
-- Frontend and backend communicate through internal Docker network
-- Single entry point at `http://localhost:8080`
-- Recommended for production deployment or when you want the full stack experience
+- Frontend: `http://localhost:8000`
+- Backend: `http://localhost:8001`
+- The Docker services also share the private `rpg_world_map` network.
 
-### Development setup (direct ports)
-- No nginx complexity
-- Frontend and backend exposed on separate ports
-- CORS enabled for cross-origin requests
-- Simpler for development and debugging
+Start the stack:
 
-Both setups support the optional Cloudflare Tunnel overlay for public access.
+```bash
+docker compose up --build
+```
+
+Stop the stack:
+
+```bash
+docker compose down --volumes --remove-orphans
+```
 
 ## API
 
@@ -211,12 +156,23 @@ frontend/
   assets/maps/
 ```
 
+## Frontend Notes
+
+- JavaScript modules are served directly as static files, without a bundler.
+- Entry modules use query-string versions to avoid stale browser caches after
+  frontend code changes.
+- Newly-created POI and regions are finalized client-side immediately after the
+  API `POST` response so they can be moved, edited, and deleted without a page
+  reload.
+
 ## V1 Manual Checklist
 
 Before tagging or merging a v1 release, verify:
 
 - The app opens at `http://localhost:8000`.
 - The backend answers at `http://localhost:8001/world`.
+- Docker mode exposes the frontend at `http://localhost:8000`.
+- Docker mode exposes the backend at `http://localhost:8001`.
 - A map can be added with an image.
 - A POI can be created, edited, focused, hidden, and deleted.
 - A region can be drawn, edited, focused, hidden, and deleted.
