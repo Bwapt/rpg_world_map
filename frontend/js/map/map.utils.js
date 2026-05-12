@@ -95,9 +95,12 @@ class MapUtils {
    */
   static buildPopupContent(item, escapeHTML) {
     const name = item.name || "";
-    const description = item.description || "";
+    const description = (item.description || "").trim();
     const meta = item.icon && item.icon !== "default"
       ? `<span class="map-popup-preview__meta">${MapUtils.getPoiGlyph(item.icon)}</span>`
+      : "";
+    const descriptionMarkup = description
+      ? `<p>${escapeHTML(description)}</p>`
       : "";
 
     return `
@@ -106,7 +109,7 @@ class MapUtils {
           <strong>${escapeHTML(name)}</strong>
           ${meta}
         </div>
-        <p>${escapeHTML(description || "Sans description")}</p>
+        ${descriptionMarkup}
       </div>
     `;
   }

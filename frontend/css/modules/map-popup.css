@@ -115,10 +115,20 @@
   gap: 8px;
   margin-bottom: 6px;
   color: var(--app-text);
+  line-height: 1.2;
+}
+
+.map-popup-preview__header strong {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
 }
 
 .map-popup-preview__meta {
+  display: flex;
+  align-items: center;
   font-size: 16px;
+  line-height: 1;
 }
 
 .map-popup-preview p {
