@@ -4,6 +4,7 @@ import MapLayerManager from "./map.layer.manager.js";
 import MapUtils from "./map.utils.js";
 import { setupGeomanControls } from "./geoman.config.js";
 import HtmlUtils from "../utils/html.utils.js";
+import { EVENT_TYPES } from "../config/app.constants.js";
 
 /**
  * Orchestrateur d'une map active: Geoman, donnees, formulaires, focus et visibilite.
@@ -248,32 +249,32 @@ class MapController {
       return false;
     }
 
-    if (type === "poi:created") {
+    if (type === EVENT_TYPES.poiCreated) {
       this.upsertRemotePoi(payload.poi);
       return true;
     }
 
-    if (type === "poi:updated") {
+    if (type === EVENT_TYPES.poiUpdated) {
       this.upsertRemotePoi(payload.poi);
       return true;
     }
 
-    if (type === "poi:deleted") {
+    if (type === EVENT_TYPES.poiDeleted) {
       this.removeRemotePoi(payload.poiId);
       return true;
     }
 
-    if (type === "area:created") {
+    if (type === EVENT_TYPES.areaCreated) {
       this.upsertRemoteArea(payload.area);
       return true;
     }
 
-    if (type === "area:updated") {
+    if (type === EVENT_TYPES.areaUpdated) {
       this.upsertRemoteArea(payload.area);
       return true;
     }
 
-    if (type === "area:deleted") {
+    if (type === EVENT_TYPES.areaDeleted) {
       this.removeRemoteArea(payload.areaId);
       return true;
     }

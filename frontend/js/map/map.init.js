@@ -1,3 +1,5 @@
+import { MAP_DEFAULTS } from "../config/app.constants.js";
+
 /**
  * Initialise une carte Leaflet en coordonnees d'image.
  *
@@ -17,8 +19,8 @@ async function initMap(containerId, image, onProgress) {
   Object.assign(L.Popup.prototype.options, {
     autoPan: true,
     keepInView: true,
-    autoPanPaddingTopLeft: L.point(24, 72),
-    autoPanPaddingBottomRight: L.point(24, 24)
+    autoPanPaddingTopLeft: L.point(MAP_DEFAULTS.popupPanSide, MAP_DEFAULTS.popupPanTop),
+    autoPanPaddingBottomRight: L.point(MAP_DEFAULTS.popupPanSide, MAP_DEFAULTS.popupPanBottom)
   });
 
   const map = L.map(containerId, {

@@ -8,8 +8,7 @@ import ModalManager from "../ui/modal.manager.js";
 import VisibilityManager from "../ui/visibility.manager.js";
 import SidebarRenderer from "../ui/sidebar.renderer.js";
 import PageZoomGuard from "./page-zoom.guard.js";
-
-const WORLD_SYNC_INTERVAL_MS = 60000;
+import { API_ROUTES, EVENT_TYPES, MAP_DEFAULTS, UI_TEXT } from "../config/app.constants.js";
 
 /**
  * Application principale: charge le monde, monte la map active et coordonne l'UI.
@@ -219,7 +218,7 @@ class WorldApp {
     }
 
     this.mapLoading.classList.add("is-indeterminate");
-    label.textContent = "Chargement";
+    label.textContent = UI_TEXT.loading;
     bar.style.width = "";
   }
 
@@ -245,7 +244,7 @@ class WorldApp {
    */
   renderCurrentMapTitle(mapData) {
     if (!mapData) {
-      this.currentMapTitle.textContent = "Aucune map";
+      this.currentMapTitle.textContent = UI_TEXT.emptyMapTitle;
       return;
     }
 
@@ -277,7 +276,7 @@ class WorldApp {
 
     this.worldSyncTimer = window.setInterval(() => {
       this.syncWorldFromServer();
-    }, WORLD_SYNC_INTERVAL_MS);
+    }, MAP_DEFAULTS.syncIntervalMs);
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
@@ -296,16 +295,16 @@ class WorldApp {
       return;
     }
 
-    const eventsURL = `${HttpClient.getDefaultBaseURL()}/events`;
+    const eventsURL = `${HttpClient.getDefaultBaseURL()}${API_ROUTES.events}`;
     this.eventSource = new EventSource(eventsURL);
 
     [
-      "poi:created",
-      "poi:updated",
-      "poi:deleted",
-      "area:created",
-      "area:updated",
-      "area:deleted"
+      EVENT_TYPES.poiCreated,
+      EVENT_TYPES.poiUpdated,
+      EVENT_TYPES.poiDeleted,
+      EVENT_TYPES.areaCreated,
+      EVENT_TYPES.areaUpdated,
+      EVENT_TYPES.areaDeleted
     ].forEach((eventType) => {
       this.eventSource.addEventListener(eventType, (event) => {
         this.handleRemoteWorldEvent(event);

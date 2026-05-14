@@ -1,5 +1,7 @@
+import { MAP_DEFAULTS } from "../config/app.constants.js";
+
 /**
- * Helpers Leaflet purs: rendu des icones, styles de zones et conversions de coordonnees.
+ * Pure Leaflet helpers for icons, area styles, and coordinate conversions.
  */
 class MapUtils {
   /**
@@ -18,11 +20,11 @@ class MapUtils {
   ];
 
   /**
-   * Couleur fallback des zones dessinees.
+   * Fallback color for drawn areas.
    *
    * @type {string}
    */
-  static DEFAULT_AREA_COLOR = "#3b82f6";
+  static DEFAULT_AREA_COLOR = MAP_DEFAULTS.areaColor;
 
   /**
    * @param {string} iconKey Cle fonctionnelle de l'icone.

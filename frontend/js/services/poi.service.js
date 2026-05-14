@@ -1,4 +1,5 @@
 import BaseService from "./base.service.js";
+import { API_ROUTES } from "../config/app.constants.js";
 
 /**
  * Service REST pour les points d'interet.
@@ -8,7 +9,7 @@ class PoiService extends BaseService {
    * @param {HttpClient} http Client HTTP partage.
    */
   constructor(http) {
-    super(http, "poi");
+    super(http, API_ROUTES.poi.slice(1));
   }
 
   /**
@@ -16,7 +17,7 @@ class PoiService extends BaseService {
    * @returns {Promise<object>} Liste des POI de la map.
    */
   getByMap(mapId) {
-    return this.http.get(`/poi/${mapId}`);
+    return this.http.get(`${API_ROUTES.poi}/${mapId}`);
   }
 }
 

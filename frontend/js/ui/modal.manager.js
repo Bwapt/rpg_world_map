@@ -1,7 +1,5 @@
-import HtmlUtils from "../utils/html.utils.js";
-
-const MAX_MAP_IMAGE_SIZE_BYTES = 25 * 1024 * 1024;
-const MAX_MAP_IMAGE_SIZE_LABEL = "25 Mo";
+import { LIMITS, UI_TEXT } from "../config/app.constants.js";
+import ModalTemplate from "./modal.template.js";
 
 /**
  * Gere l'ouverture et la fermeture des modales globales de l'application.
@@ -12,6 +10,7 @@ class ModalManager {
    */
   constructor(modalRoot) {
     this.modalRoot = modalRoot;
+    this.template = new ModalTemplate();
   }
 
   /**
@@ -52,32 +51,7 @@ class ModalManager {
   openAddMapModal(onConfirm) {
     const content = document.createElement("div");
     content.className = "modal";
-    content.innerHTML = `
-      <h2>Ajouter une map</h2>
-      <label>
-        Nom
-        <input name="name" type="text" />
-      </label>
-      <label>
-        Image
-        <input name="image" type="file" accept="image/*" />
-        <span class="modal__help">Taille maximale : ${MAX_MAP_IMAGE_SIZE_LABEL}</span>
-      </label>
-      <p class="modal__error" data-image-error hidden></p>
-      <div class="modal-progress" data-upload-progress hidden>
-        <div class="modal-progress__meta">
-          <span>Upload</span>
-          <span data-upload-progress-label>0%</span>
-        </div>
-        <div class="modal-progress__track">
-          <div class="modal-progress__bar" data-upload-progress-bar></div>
-        </div>
-      </div>
-      <div class="modal__actions">
-        <button type="button" class="modal__cancel" data-action="cancel">Annuler</button>
-        <button type="button" class="modal__confirm" data-action="confirm">Valider</button>
-      </div>
-    `;
+    content.innerHTML = this.template.renderAddMapModal();
 
     const { close } = this.openModal(content);
     const nameInput = content.querySelector('[name="name"]');
@@ -99,7 +73,7 @@ class ModalManager {
       }
 
       progressRoot.classList.add("is-indeterminate");
-      progressLabel.textContent = "En cours";
+      progressLabel.textContent = UI_TEXT.uploadInProgress;
       progressBar.style.width = "";
     };
 
@@ -130,8 +104,8 @@ class ModalManager {
         return;
       }
 
-      if (image.size > MAX_MAP_IMAGE_SIZE_BYTES) {
-        showImageError(`Image trop lourde. La taille maximale autorisée est de ${MAX_MAP_IMAGE_SIZE_LABEL}.`);
+      if (image.size > LIMITS.maxMapImageSizeBytes) {
+        showImageError(UI_TEXT.mapImageTooLarge);
         imageInput.focus();
         return;
       }
@@ -167,14 +141,7 @@ class ModalManager {
   openDeleteMapModal(map, onConfirm) {
     const content = document.createElement("div");
     content.className = "modal";
-    content.innerHTML = `
-      <h2>Supprimer la map</h2>
-      <p>${HtmlUtils.escapeHTML(map.name || map.id)}</p>
-      <div class="modal__actions">
-        <button type="button" class="modal__cancel" data-action="cancel">Annuler</button>
-        <button type="button" class="modal__confirm is-danger" data-action="confirm">Supprimer</button>
-      </div>
-    `;
+    content.innerHTML = this.template.renderDeleteMapModal(map);
 
     const { close } = this.openModal(content);
     content.querySelector('[data-action="cancel"]').addEventListener("click", close);

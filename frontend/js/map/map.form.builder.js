@@ -1,5 +1,5 @@
 import MapUtils from "./map.utils.js";
-import HtmlUtils from "../utils/html.utils.js";
+import MapFormTemplate from "./map.form.template.js";
 
 /**
  * Construit les formulaires Leaflet de creation et modification des entites de map.
@@ -14,6 +14,7 @@ class MapFormBuilder {
     this.poiService = poiService;
     this.areaService = areaService;
     this.mapId = mapId;
+    this.template = new MapFormTemplate();
   }
 
   /**
@@ -52,38 +53,7 @@ class MapFormBuilder {
    */
   buildPoiFormContainer(poi) {
     const container = document.createElement("div");
-    const title = poi ? "Modifier le Point d'intérêt" : "Créer le Point d'intérêt";
-
-    container.innerHTML = `
-      <div class="map-popup">
-        <h4 class="map-popup__title">${title}</h4>
-        <label class="map-popup__field">
-          <span>Nom</span>
-          <input
-            name="name"
-            placeholder="Nom"
-            value="${HtmlUtils.escapeAttribute(poi?.name || "")}"
-          />
-        </label>
-        <label class="map-popup__field">
-          <span>Description</span>
-          <textarea
-            name="description"
-            placeholder="Description"
-          >${HtmlUtils.escapeHTML(poi?.description || "")}</textarea>
-        </label>
-        <label class="map-popup__field">
-          <span>Icone</span>
-          <select name="icon">
-            ${MapUtils.renderPoiIconOptions(poi?.icon || "default")}
-          </select>
-        </label>
-        <div class="map-popup__actions">
-          <button type="button" class="map-popup__button is-primary" data-action="save">Valider</button>
-          <button type="button" class="map-popup__button" data-action="cancel">Annuler</button>
-        </div>
-      </div>
-    `;
+    container.innerHTML = this.template.renderPoiForm(poi);
 
     return container;
   }
@@ -94,41 +64,7 @@ class MapFormBuilder {
    */
   buildAreaFormContainer(area) {
     const container = document.createElement("div");
-    const title = area ? "Modifier la zone" : "Créer la zone";
-
-    container.innerHTML = `
-      <div class="map-popup">
-        <h4 class="map-popup__title">${title}</h4>
-        <label class="map-popup__field">
-          <span>Nom</span>
-          <input
-            name="name"
-            placeholder="Nom"
-            value="${HtmlUtils.escapeAttribute(area?.name || "")}"
-          />
-        </label>
-        <label class="map-popup__field">
-          <span>Description</span>
-          <textarea
-            name="description"
-            placeholder="Description"
-          >${HtmlUtils.escapeHTML(area?.description || "")}</textarea>
-        </label>
-        <label class="map-popup__field">
-          <span>Couleur</span>
-          <input
-            class="map-popup__color"
-            name="color"
-            type="color"
-            value="${HtmlUtils.escapeAttribute(area?.color || MapUtils.DEFAULT_AREA_COLOR)}"
-          />
-        </label>
-        <div class="map-popup__actions">
-          <button type="button" class="map-popup__button is-primary" data-action="save">Valider</button>
-          <button type="button" class="map-popup__button" data-action="cancel">Annuler</button>
-        </div>
-      </div>
-    `;
+    container.innerHTML = this.template.renderAreaForm(area);
 
     return container;
   }

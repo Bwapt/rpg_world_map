@@ -1,6 +1,7 @@
 """Routes Flask dediees aux zones dessinees."""
 
 from flask import Blueprint, request
+from config import DEFAULT_AREA_COLOR, EVENT_TYPES
 from services.event_stream import publish
 from services.world_service import (
     create_entity,
@@ -35,14 +36,14 @@ def create_area():
         data,
         {
             "points": data.get("points", []),
-            "color": data.get("color", "#3b82f6"),
+            "color": data.get("color", DEFAULT_AREA_COLOR),
         },
     )
 
     if not area:
         return {"error": "map not found"}, 404
 
-    publish("area:created", {"mapId": data["mapId"], "area": area})
+    publish(EVENT_TYPES["area_created"], {"mapId": data["mapId"], "area": area})
     return {"area": area}
 
 
@@ -56,7 +57,7 @@ def update_area(area_id):
         return {"error": "area not found"}, 404
 
     map_data, _ = get_entity_context(area_id, "areas")
-    publish("area:updated", {"mapId": map_data["id"], "area": area})
+    publish(EVENT_TYPES["area_updated"], {"mapId": map_data["id"], "area": area})
     return {"status": "updated", "area": area}
 
 
@@ -69,5 +70,5 @@ def delete_area(area_id):
     if not deleted:
         return {"error": "area not found"}, 404
 
-    publish("area:deleted", {"mapId": map_data["id"], "areaId": area_id, "area": area})
+    publish(EVENT_TYPES["area_deleted"], {"mapId": map_data["id"], "areaId": area_id, "area": area})
     return {"status": "deleted"}
